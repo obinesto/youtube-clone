@@ -5,6 +5,7 @@ import Footer from "@/components/Footer";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import ModeToggle from "@/components/mode/ModeToggle";
 import { Providers } from "./providers";
+import { Toaster } from "@/components/ui/sonner";
 import Script from "next/script";
 import "./globals.css";
 
@@ -22,7 +23,7 @@ export const metadata = {
   title: "Youtube Clone",
   description: "A Youtube clone built with Next.js and Supabase",
   image: "https://og-image.vercel.app/Youtube%20Clone.png",
-  url: "https://youtube-clone.vercel.app",
+  url: "https://youtube-clone-cyprianobi.vercel.app/",
 };
 
 export default function RootLayout({ children }) {
@@ -46,6 +47,7 @@ export default function RootLayout({ children }) {
             <ModeToggle />
           </div>
           </ErrorBoundary>
+          <Toaster />
         </Providers>
       </body>
     </html>

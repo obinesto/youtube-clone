@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { toast } from "sonner";
 import { formatDate, formatDuration } from "@/lib/utils/dateFormat";
 import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -23,12 +24,9 @@ const VideoCard = ({
   thumbnail,
   channelTitle,
   createdAt,
-  description,
   views,
   duration,
   isOwner,
-  likedAt,
-  savedAt,
 }) => {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -159,8 +157,45 @@ const VideoCard = ({
             </div>
           )}
 
+          {isOwner && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="bg-black/80 hover:bg-black text-white"
+                >
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={handleEdit}>
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Edit
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={handleDelete}
+                  className="text-destructive"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
+        <CardContent className="p-4">
+          <h3 className="text-lg font-semibold line-clamp-2 hover:text-customRed">
+            {title}
+          </h3>
+          <p className="text-sm text-muted-foreground mt-1">{channelTitle}</p>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+            {formattedViews && <span>{formattedViews} views</span>}
+            {formattedViews && formattedDate && <span>•</span>}
+            {formattedDate && <span>{formattedDate}</span>}
+          </div>
           {/* Video actions overlay */}
-          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2">
+          <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2">
             {isAuthenticated && (
               <>
                 <Button
@@ -173,6 +208,11 @@ const VideoCard = ({
                     e.preventDefault();
                     e.stopPropagation();
                     handleLike();
+                    toast(
+                      isLiked
+                        ? "Removed from Liked videos"
+                        : "Added to Liked videos"
+                    );
                   }}
                   disabled={isLoadingLike}
                 >
@@ -192,6 +232,11 @@ const VideoCard = ({
                     e.preventDefault();
                     e.stopPropagation();
                     handleWatchLater();
+                    toast(
+                      isInWatchLater
+                        ? "Removed from Watch Later"
+                        : "Added to Watch Later"
+                    );
                   }}
                   disabled={isLoadingWatchLater}
                 >
@@ -205,43 +250,6 @@ const VideoCard = ({
                 </Button>
               </>
             )}
-            {isOwner && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="bg-black/80 hover:bg-black text-white"
-                  >
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuItem onClick={handleEdit}>
-                    <Pencil className="h-4 w-4 mr-2" />
-                    Edit
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={handleDelete}
-                    className="text-destructive"
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-          </div>
-        </div>
-        <CardContent className="p-4">
-          <h3 className="text-lg font-semibold line-clamp-2 hover:text-customRed">
-            {title}
-          </h3>
-          <p className="text-sm text-muted-foreground mt-1">{channelTitle}</p>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-            {formattedViews && <span>{formattedViews} views</span>}
-            {formattedViews && formattedDate && <span>•</span>}
-            {formattedDate && <span>{formattedDate}</span>}
           </div>
         </CardContent>
       </Card>

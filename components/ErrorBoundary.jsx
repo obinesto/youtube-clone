@@ -22,7 +22,7 @@ class ErrorBoundary extends Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="container flex items-center justify-center">
+        <div className="container flex items-center justify-center pt-16">
           <Alert variant="destructive" className="max-w-2xl mx-auto">
             <AlertTitle>Something went wrong!</AlertTitle>
             <AlertDescription className="mt-2">

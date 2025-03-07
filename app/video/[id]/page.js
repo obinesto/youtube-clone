@@ -3,6 +3,7 @@ import { useVideoDetails } from "@/hooks/useQueries";
 import VideoPlayer from "@/components/VideoPlayer";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import { use } from "react";
 import { ThumbsUp, Clock, ChevronUp, ChevronDown } from "lucide-react";
@@ -69,7 +70,14 @@ export default function VideoPage({ params }) {
                   variant="ghost"
                   size="sm"
                   className={isLiked ? "text-customRed" : ""}
-                  onClick={handleLike}
+                  onClick={() => {
+                    handleLike();
+                    toast(
+                      isLiked
+                        ? "Removed from Liked videos"
+                        : "Added to Liked videos"
+                    );
+                  }}
                   disabled={isLoadingLike}
                 >
                   {isLoadingLike ? null : (
@@ -82,7 +90,14 @@ export default function VideoPage({ params }) {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={handleWatchLater}
+                  onClick={() => {
+                    handleWatchLater();
+                    toast(
+                      isInWatchLater
+                        ? "Removed from Watch Later"
+                        : "Added to Watch Later"
+                    );
+                  }}
                   disabled={isLoadingWatchLater}
                 >
                   {isLoadingWatchLater ? null : (
