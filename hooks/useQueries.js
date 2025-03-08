@@ -27,7 +27,7 @@ export const useVideos = () => {
         Sentry.addBreadcrumb({
           category: "videos",
           message: "Fetching videos",
-          level: Sentry.Severity.Info,
+          level: "info",
         });
         const response = await axiosInstance.get("/search", {
           params: {
@@ -67,7 +67,7 @@ export const useVideoDetails = (videoId) => {
         Sentry.addBreadcrumb({
           category: "video",
           message: "Fetching video details",
-          level: Sentry.Severity.Info,
+          level: "info"
         });
         const response = await axiosInstance.get("/videos", {
           params: {
@@ -115,7 +115,7 @@ export const useRelatedVideos = (videoId, videoTitle) => {
         Sentry.addBreadcrumb({
           category: "related-videos",
           message: "Fetching related videos",
-          level: Sentry.Severity.Info,
+          level: "info",
         });
         const response = await axiosInstance.get("/search", {
           params: {
@@ -157,7 +157,7 @@ export const useWatchHistory = () => {
         Sentry.addBreadcrumb({
           category: "watch-history",
           message: "Fetching watch history",
-          level: Sentry.Severity.Info,
+          level: "Info",
         });
         const response = await fetch("/app/api/history", {
           headers: {
@@ -186,7 +186,7 @@ export const useAddToHistory = () => {
         Sentry.addBreadcrumb({
           category: "history",
           message: "Adding to watch history",
-          level: Sentry.Severity.Info,
+          level: "info",
         });
         const response = await fetch("/app/api/history", {
           method: "POST",
@@ -219,7 +219,7 @@ export const useClearHistory = () => {
         Sentry.addBreadcrumb({
           category: "history",
           message: "Clearing watch history",
-          level: Sentry.Severity.Info,
+          level: "info",
         });
         const response = await fetch("/app/api/history", {
           method: "DELETE",
@@ -254,7 +254,7 @@ export const useLikedVideos = () => {
         Sentry.addBreadcrumb({
           category: "likes",
           message: "Fetching liked videos",
-          level: Sentry.Severity.Info,
+          level: "info",
         });
         // First get liked videos from our database
         const response = await fetch(
@@ -306,7 +306,7 @@ export const useVideoLike = () => {
         Sentry.addBreadcrumb({
           category: "likes",
           message: `${action} video like`,
-          level: Sentry.Severity.Info,
+          level: "info",
         });
         if (!user?.email) throw new Error("User email required");
 
@@ -343,7 +343,6 @@ export const useVideoLike = () => {
 // Watch Later
 export const useWatchLater = () => {
   const { isAuthenticated, token, user } = useUserStore();
-  const queryClient = useQueryClient();
 
   return useQuery({
     queryKey: ["watchLater"],
@@ -352,9 +351,9 @@ export const useWatchLater = () => {
         Sentry.addBreadcrumb({
           category: "watch-later",
           message: "Fetching watch later list",
-          level: Sentry.Severity.Info,
+          level: "info",
         });
-        // First get watch later videos from our database
+        // First get watch later videos from database
         const response = await fetch(
           `/api/watch-later?email=${encodeURIComponent(user.email)}`,
           {
@@ -404,7 +403,7 @@ export const useWatchLaterMutation = () => {
         Sentry.addBreadcrumb({
           category: "watch-later",
           message: `${action} watch later`,
-          level: Sentry.Severity.Info,
+          level: "info",
         });
         if (!user?.email) throw new Error("User email required");
 
@@ -449,7 +448,7 @@ export const useUserVideos = () => {
         Sentry.addBreadcrumb({
           category: "user-videos",
           message: "Fetching user videos",
-          level: Sentry.Severity.Info,
+          level: "info",
         });
         const response = await fetch("/app/api/videos?userId=me", {
           headers: {
@@ -477,7 +476,7 @@ export const useVideoMutation = () => {
         Sentry.addBreadcrumb({
           category: "user-videos",
           message: `${type} video operation`,
-          level: Sentry.Severity.Info,
+          level: "info",
         });
         const config = {
           headers: {
@@ -513,7 +512,7 @@ export const useTrendingVideos = () => {
         Sentry.addBreadcrumb({
           category: "trending",
           message: "Fetching trending videos",
-          level: Sentry.Severity.Info,
+          level: "info",
         });
         const response = await axiosInstance.get("/videos", {
           params: {
