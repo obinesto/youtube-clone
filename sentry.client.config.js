@@ -9,7 +9,10 @@ Sentry.init({
 
   // Add optional integrations for additional features
   integrations: [
-    Sentry.replayIntegration(),
+    Sentry.replayIntegration({
+      unblock: [".sentry-unblock, [data-sentry-unblock]"],
+      unmask: [".sentry-unmask, [data-sentry-unmask]"],
+    }),
   ],
 
   // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
