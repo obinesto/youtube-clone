@@ -2,6 +2,7 @@
 import { Component } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import * as Sentry from "@sentry/nextjs";
 import { Home, RefreshCcw } from "lucide-react";
 import Link from "next/link";
 
@@ -17,7 +18,9 @@ class ErrorBoundary extends Component {
 
   componentDidCatch(error, errorInfo) {
     console.error("ErrorBoundary caught an error:", error, errorInfo);
+    Sentry.captureException(error);
   }
+  
 
   render() {
     if (this.state.hasError) {

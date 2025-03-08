@@ -6,12 +6,14 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import { use } from "react";
+import useUserStore from "@/hooks/useStore";
 import { ThumbsUp, Clock, ChevronUp, ChevronDown } from "lucide-react";
 import { useProtectedFeatures } from "@/hooks/useProtectedFeatures";
 import { formatViews, formatDate } from "@/lib/utils/dateFormat";
 import RelatedVideos from "@/components/RelatedVideos";
 
 export default function VideoPage({ params }) {
+  const { isAuthenticated } = useUserStore();
   const resolvedParams = use(params);
   const { id } = resolvedParams;
   const {
@@ -50,7 +52,7 @@ export default function VideoPage({ params }) {
   }
 
   return (
-    <main className="flex min-h-screen flex-col">
+    <main className="flex min-h-screen flex-col pt-16">
       <div className="flex-1 flex flex-col lg:flex-row gap-4 p-4">
         <div className="flex-1">
           <VideoPlayer videoId={id} />
@@ -66,49 +68,55 @@ export default function VideoPage({ params }) {
                 </span>
               </div>
               <div className="flex items-center gap-4">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={isLiked ? "text-customRed" : ""}
-                  onClick={() => {
-                    handleLike();
-                    toast(
-                      isLiked
-                        ? "Removed from Liked videos"
-                        : "Added to Liked videos"
-                    );
-                  }}
-                  disabled={isLoadingLike}
-                >
-                  {isLoadingLike ? null : (
-                    <ThumbsUp
-                      className={`h-4 w-4 ${isLiked ? "fill-customRed" : ""}`}
-                    />
-                  )}
-                  <span className="ml-2">Like</span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    handleWatchLater();
-                    toast(
-                      isInWatchLater
-                        ? "Removed from Watch Later"
-                        : "Added to Watch Later"
-                    );
-                  }}
-                  disabled={isLoadingWatchLater}
-                >
-                  {isLoadingWatchLater ? null : (
-                    <Clock
-                      className={`h-4 w-4 ${
-                        isInWatchLater ? "fill-current" : ""
-                      }`}
-                    />
-                  )}
-                  <span className="ml-2">Watch Later</span>
-                </Button>
+                {isAuthenticated && (
+                  <>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className={isLiked ? "text-customRed" : ""}
+                      onClick={() => {
+                        handleLike();
+                        toast(
+                          isLiked
+                            ? "Removed from Liked videos"
+                            : "Added to Liked videos"
+                        );
+                      }}
+                      disabled={isLoadingLike}
+                    >
+                      {isLoadingLike ? null : (
+                        <ThumbsUp
+                          className={`h-4 w-4 ${
+                            isLiked ? "fill-customRed" : ""
+                          }`}
+                        />
+                      )}
+                      <span className="ml-2">Like</span>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        handleWatchLater();
+                        toast(
+                          isInWatchLater
+                            ? "Removed from Watch Later"
+                            : "Added to Watch Later"
+                        );
+                      }}
+                      disabled={isLoadingWatchLater}
+                    >
+                      {isLoadingWatchLater ? null : (
+                        <Clock
+                          className={`h-4 w-4 ${
+                            isInWatchLater ? "fill-current" : ""
+                          }`}
+                        />
+                      )}
+                      <span className="ml-2">Watch Later</span>
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
             <div className="mt-4">
