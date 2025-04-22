@@ -67,7 +67,7 @@ export const useVideoDetails = (videoId) => {
         Sentry.addBreadcrumb({
           category: "video",
           message: "Fetching video details",
-          level: "info"
+          level: "info",
         });
         const response = await axiosInstance.get("/videos", {
           params: {
@@ -148,7 +148,7 @@ export const useRelatedVideos = (videoId, videoTitle) => {
 
 // Watch History
 export const useWatchHistory = () => {
-  const { isAuthenticated, token } = useUserStore();
+  const { isAuthenticated, token, user } = useUserStore();
 
   return useQuery({
     queryKey: ["watchHistory"],
@@ -157,28 +157,43 @@ export const useWatchHistory = () => {
         Sentry.addBreadcrumb({
           category: "watch-history",
           message: "Fetching watch history",
-          level: "Info",
+          level: "info",
         });
-        const response = await fetch("/app/api/history", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        if (!response.ok) throw new Error("Failed to fetch watch history");
+        const response = await fetch(
+          `/api/history?email=${encodeURIComponent(user.email)}`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error("API error response:", errorData);
+          throw new Error(
+            `Failed to fetch watch history (Status: ${response.status})`
+          );
+        }
         const data = await response.json();
-        return data.history;
+        return data.history || [];
       } catch (error) {
         Sentry.captureException(error);
         console.error("Failed to fetch watch history", error);
+        throw error;
       }
     },
     enabled: Boolean(isAuthenticated && token),
+    retry: (failureCount, error) => {
+      return failureCount < 2 && !error.message.includes("quota exceeded");
+    },
   });
 };
 
 export const useAddToHistory = () => {
   const queryClient = useQueryClient();
-  const { token } = useUserStore();
+  const { token, user } = useUserStore();
 
   return useMutation({
     mutationFn: async (videoId) => {
@@ -188,7 +203,7 @@ export const useAddToHistory = () => {
           message: "Adding to watch history",
           level: "info",
         });
-        const response = await fetch("/app/api/history", {
+        const response = await fetch(`/api/history?email=${encodeURIComponent(user.email)}`, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -211,7 +226,7 @@ export const useAddToHistory = () => {
 
 export const useClearHistory = () => {
   const queryClient = useQueryClient();
-  const { token } = useUserStore();
+  const { token, user } = useUserStore();
 
   return useMutation({
     mutationFn: async (videoId) => {
@@ -221,7 +236,7 @@ export const useClearHistory = () => {
           message: "Clearing watch history",
           level: "info",
         });
-        const response = await fetch("/app/api/history", {
+        const response = await fetch(`/api/history?email=${encodeURIComponent(user.email)}`, {
           method: "DELETE",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -245,7 +260,6 @@ export const useClearHistory = () => {
 // Likes
 export const useLikedVideos = () => {
   const { isAuthenticated, token, user } = useUserStore();
-  const queryClient = useQueryClient();
 
   return useQuery({
     queryKey: ["likedVideos"],
@@ -262,6 +276,7 @@ export const useLikedVideos = () => {
           {
             headers: {
               Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
             },
           }
         );
@@ -310,9 +325,10 @@ export const useVideoLike = () => {
         });
         if (!user?.email) throw new Error("User email required");
 
-        const response = await fetch("/api/likes", {
+        const response = await fetch(`/api/likes?email=${encodeURIComponent(user.email)}`, {
           method: "POST",
           headers: {
+            Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
@@ -359,6 +375,7 @@ export const useWatchLater = () => {
           {
             headers: {
               Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
             },
           }
         );
@@ -406,7 +423,6 @@ export const useWatchLaterMutation = () => {
           level: "info",
         });
         if (!user?.email) throw new Error("User email required");
-
         const response = await fetch("/api/watch-later", {
           method: "POST",
           headers: {
@@ -439,7 +455,7 @@ export const useWatchLaterMutation = () => {
 
 // User Videos
 export const useUserVideos = () => {
-  const { isAuthenticated, token } = useUserStore();
+  const { isAuthenticated, token, user } = useUserStore();
 
   return useQuery({
     queryKey: ["userVideos"],
@@ -450,11 +466,15 @@ export const useUserVideos = () => {
           message: "Fetching user videos",
           level: "info",
         });
-        const response = await fetch("/app/api/videos?userId=me", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const response = await fetch(
+          `/api/users?email=${encodeURIComponent(user.email)}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
         if (!response.ok) throw new Error("Failed to fetch user videos");
         const data = await response.json();
         return data.videos;
@@ -490,7 +510,7 @@ export const useVideoMutation = () => {
           ),
         };
 
-        const response = await fetch("/app/api/videos", config);
+        const response = await fetch(`/api/users?email=${encodeURIComponent(user.email)}`, config);
         if (!response.ok) throw new Error(`Failed to ${type} video`);
         return response.json();
       } catch (error) {

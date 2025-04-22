@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/hover-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
-import {FaGithub, FaLinkedin, FaTwitter} from "react-icons/fa";
+import { FaGithub, FaLinkedin, FaTwitter } from "react-icons/fa";
 
 const Footer = () => {
   const socialLinks = [
@@ -44,7 +44,9 @@ const Footer = () => {
         <div className="grid grid-cols-3 gap-6">
           <Card className="bg-transparent border-none shadow-none">
             <CardHeader>
-              <CardTitle className="flex text-center text-xl">YouTube Clone</CardTitle>
+              <CardTitle className="flex text-center text-xl">
+                YouTube Clone
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="flex text-center text-muted-foreground">
@@ -55,46 +57,51 @@ const Footer = () => {
 
           <Card className="bg-transparent border-none shadow-none">
             <CardHeader>
-              <CardTitle className="flex text-center text-lg">Quick Links</CardTitle>
+              <CardTitle className="flex text-center text-lg">
+                Quick Links
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <NavigationMenu>
                 <NavigationMenuList className="flex flex-col space-y-2">
                   <NavigationMenuItem>
-                    <Link href="/" legacyBehavior passHref>
-                      <NavigationMenuLink
-                        className={navigationMenuTriggerStyle()}
-                      >
-                        Home
-                      </NavigationMenuLink>
-                    </Link>
+                    <NavigationMenuLink
+                      asChild
+                      className={navigationMenuTriggerStyle()}
+                    >
+                      <Link href="/">Home</Link>
+                    </NavigationMenuLink>
                   </NavigationMenuItem>
+
                   <NavigationMenuItem>
-                    <Link href="/trending" legacyBehavior passHref>
-                      <NavigationMenuLink
-                        className={navigationMenuTriggerStyle()}
-                      >
+                    <NavigationMenuLink
+                      asChild
+                      className={navigationMenuTriggerStyle()}
+                    >
+                      <Link href="/trending" passHref>
                         Trending
-                      </NavigationMenuLink>
-                    </Link>
+                      </Link>
+                    </NavigationMenuLink>
                   </NavigationMenuItem>
                   <NavigationMenuItem>
-                    <Link href="/subscriptions" legacyBehavior passHref>
-                      <NavigationMenuLink
-                        className={navigationMenuTriggerStyle()}
-                      >
+                    <NavigationMenuLink
+                      asChild
+                      className={navigationMenuTriggerStyle()}
+                    >
+                      <Link href="/subscriptions" passHref>
                         Subscriptions
-                      </NavigationMenuLink>
-                    </Link>
+                      </Link>
+                    </NavigationMenuLink>
                   </NavigationMenuItem>
                   <NavigationMenuItem>
-                    <Link href="/library" legacyBehavior passHref>
                       <NavigationMenuLink
-                        className={navigationMenuTriggerStyle()}
-                      >
+                      asChild
+                      className={navigationMenuTriggerStyle()}
+                    >
+                      <Link href="/library" passHref>
                         Library
-                      </NavigationMenuLink>
-                    </Link>
+                      </Link>
+                    </NavigationMenuLink>
                   </NavigationMenuItem>
                 </NavigationMenuList>
               </NavigationMenu>
