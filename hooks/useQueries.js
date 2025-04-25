@@ -467,7 +467,7 @@ export const useUserVideos = () => {
           level: "info",
         });
         const response = await fetch(
-          `/api/users?email=${encodeURIComponent(user.email)}`,
+          `/api/videos?email=${encodeURIComponent(user.email)}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
