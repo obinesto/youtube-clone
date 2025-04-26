@@ -108,11 +108,11 @@ export default function VideoPage({ params }) {
                       disabled={isLoadingWatchLater}
                     >
                       {isLoadingWatchLater ? null : (
-                        <Clock
-                          className="h-4 w-4"
-                        />
+                        <Clock className="h-4 w-4" />
                       )}
-                      <span className="ml-2">{isInWatchLater ? "In Watch Later" : "Watch Later"}</span>
+                      <span className="ml-2">
+                        {isInWatchLater ? "In Watch Later" : "Watch Later"}
+                      </span>
                     </Button>
                   </>
                 )}

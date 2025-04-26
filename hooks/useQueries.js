@@ -315,16 +315,20 @@ export const useLikedVideos = () => {
 
 export const useVideoLike = () => {
   const queryClient = useQueryClient();
+  const { user } = useUserStore();
 
   return useMutation({
     mutationFn: async ({ videoId, action }) => {
       try {
+        if (!user?.email) {
+          throw new Error("User email required");
+        }
+
         Sentry.addBreadcrumb({
           category: "likes",
           message: `${action} video like`,
           level: "info",
         });
-        if (!email) throw new Error("User email required");
 
         const response = await fetch("/api/likes", {
           method: "POST",
@@ -334,7 +338,7 @@ export const useVideoLike = () => {
           body: JSON.stringify({
             videoId,
             action,
-            email,
+            email: user.email,
           }),
         });
 
@@ -412,16 +416,20 @@ export const useWatchLater = () => {
 
 export const useWatchLaterMutation = () => {
   const queryClient = useQueryClient();
+  const { user } = useUserStore();
 
   return useMutation({
     mutationFn: async ({ videoId, action }) => {
       try {
+        if (!user?.email) {
+          throw new Error("User email required");
+        }
+
         Sentry.addBreadcrumb({
           category: "watch-later",
           message: `${action} watch later`,
           level: "info",
         });
-        if (!user?.email) throw new Error("User email required");
 
         const response = await fetch("/api/watch-later", {
           method: "POST",
@@ -431,7 +439,7 @@ export const useWatchLaterMutation = () => {
           body: JSON.stringify({
             videoId,
             action,
-            email,
+            email: user.email,
           }),
         });
 
