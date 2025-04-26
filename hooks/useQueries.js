@@ -477,7 +477,7 @@ export const useUserVideos = () => {
         );
         if (!response.ok) throw new Error("Failed to fetch user videos");
         const data = await response.json();
-        return data.videos;
+        return data.videos || [];
       } catch (error) {
         return handleApiError(error);
       }

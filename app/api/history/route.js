@@ -80,6 +80,7 @@ export async function POST(request) {
         .insert([{
           user_id: user.id,
           video_id: videoId,
+          created_at: new Date().toISOString(),
         }]);
 
       if (error?.code === "23505") { // Unique violation

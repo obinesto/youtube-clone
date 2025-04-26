@@ -91,7 +91,7 @@ export default function VideoPage({ params }) {
                           }`}
                         />
                       )}
-                      <span className="ml-2">Like</span>
+                      <span className="ml-2">{isLiked ? "Liked" : "Like"}</span>
                     </Button>
                     <Button
                       variant="ghost"
@@ -109,11 +109,11 @@ export default function VideoPage({ params }) {
                       {isLoadingWatchLater ? null : (
                         <Clock
                           className={`h-4 w-4 ${
-                            isInWatchLater ? "fill-current" : ""
+                            isInWatchLater ? "fill-customRed" : ""
                           }`}
                         />
                       )}
-                      <span className="ml-2">Watch Later</span>
+                      <span className="ml-2">{isInWatchLater ? "In Watch Later" : "Watch Later"}</span>
                     </Button>
                   </>
                 )}

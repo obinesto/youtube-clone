@@ -51,7 +51,7 @@ const VideoCard = ({
   const handleMouseEnter = () => {
     setIsHovered(true);
     if (videoRef.current) {
-      videoRef.current.src = `https://www.youtube.com/embed/${id}?autoplay=1&mute=1&controls=0&modestbranding=1&playsinline=1`;
+      videoRef.current.src = `https://www.youtube.com/embed/${id}?autoplay=1&mute=0&controls=0&modestbranding=1&playsinline=1`;
     }
   };
 
@@ -218,7 +218,7 @@ const VideoCard = ({
                 >
                   {isLoadingLike ? null : (
                     <ThumbsUp
-                      className={`h-4 w-4 ${isLiked ? "fill-customRed" : ""}`}
+                      className="h-4 w-4"
                     />
                   )}
                 </Button>
@@ -226,7 +226,7 @@ const VideoCard = ({
                   variant="ghost"
                   size="icon"
                   className={`bg-black/80 hover:bg-black/90 ${
-                    isInWatchLater ? "text-white" : "text-white"
+                    isInWatchLater ? "text-customRed" : "text-white"
                   }`}
                   onClick={(e) => {
                     e.preventDefault();
@@ -242,9 +242,7 @@ const VideoCard = ({
                 >
                   {isLoadingWatchLater ? null : (
                     <Clock
-                      className={`h-4 w-4 ${
-                        isInWatchLater ? "fill-current" : ""
-                      }`}
+                      className="h-4 w-4"
                     />
                   )}
                 </Button>
