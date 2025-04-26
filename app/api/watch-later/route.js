@@ -101,6 +101,7 @@ export async function POST(request) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    console.error('Watch later operation error:', error);
     return NextResponse.json(
       { error: error.message },
       { status: 500 }

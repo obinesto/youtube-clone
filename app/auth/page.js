@@ -88,6 +88,21 @@ export default function Auth() {
     }
   };
 
+  const handleGoogleLogin = async () => {
+    setSubmitLoader(true);
+    setErrorMessage("");
+    try {
+      await loginWithGoogle();
+      if (!error) {
+        router.push("/");
+      }
+    } catch (err) {
+      setErrorMessage(err.message || "Authentication failed");
+    } finally {
+      setSubmitLoader(false);
+    }
+  }
+
   return (
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4 pt-16 bg-background">
       <div className="w-full max-w-md">
@@ -235,7 +250,8 @@ export default function Auth() {
                 type="button"
                 variant="outline"
                 className="w-full"
-                onClick={loginWithGoogle}
+                onClick={handleGoogleLogin}
+                disabled={submitLoader}
               >
                 Continue with Google
               </Button>

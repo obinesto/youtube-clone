@@ -34,27 +34,41 @@ export function useProtectedFeatures(videoId) {
   // User Videos features
   const { data: userVideos, isLoading: isLoadingUserVideos } = useUserVideos();
   const videoMutation = useVideoMutation();
-
   // Check if video is liked
   const { data: likeStatus } = useQuery({
     queryKey: ["videoLike", videoId],
     queryFn: async () => {
-      const response = await fetch(`/api/likes?email=${encodeURIComponent(user.email)}`);
-      if (!response.ok) throw new Error("Failed to fetch like status");
-      const data = await response.json();
-      return data.likes?.some(like => like.video_id === videoId) || false;
+      try {
+        const response = await fetch(`/api/likes?email=${encodeURIComponent(user.email)}`);
+        const data = await response.json();
+        if (!response.ok) {
+          console.error("Like status error:", data.error);
+          return false;
+        }
+        return data.likes?.some(like => like.video_id === videoId) || false;
+      } catch (error) {
+        console.error("Failed to fetch like status:", error);
+        return false;
+      }
     },
     enabled: Boolean(isAuthenticated && user?.email && videoId),
   });
-
   // Check if video is in watch later
   const { data: watchLaterStatus } = useQuery({
     queryKey: ["watchLater", videoId],
     queryFn: async () => {
-      const response = await fetch(`/api/watch-later?email=${encodeURIComponent(user.email)}`);
-      if (!response.ok) throw new Error("Failed to fetch watch later status");
-      const data = await response.json();
-      return data.watchLater?.some(item => item.video_id === videoId) || false;
+      try {
+        const response = await fetch(`/api/watch-later?email=${encodeURIComponent(user.email)}`);
+        const data = await response.json();
+        if (!response.ok) {
+          console.error("Watch later status error:", data.error);
+          return false;
+        }
+        return data.watchLater?.some(item => item.video_id === videoId) || false;
+      } catch (error) {
+        console.error("Failed to fetch watch later status:", error);
+        return false;
+      }
     },
     enabled: Boolean(isAuthenticated && user?.email && videoId),
   });
@@ -73,44 +87,60 @@ export function useProtectedFeatures(videoId) {
     if (watchLaterStatus !== undefined) {
       setIsInWatchLater(watchLaterStatus);
     }
-  }, [watchLaterStatus]);
-
-  // Helper functions with auth checks
+  }, [watchLaterStatus]);  // Helper functions with auth checks
   const handleLike = useCallback(async () => {
     if (!isAuthenticated) {
       router.push('/auth');
-      return;
+      return false;
+    }
+
+    if (!user?.email || !videoId) {
+      console.error("Missing required data for like operation");
+      return false;
     }
 
     try {
-      await likeMutation.mutateAsync({
+      const result = await likeMutation.mutateAsync({
         videoId,
         action: isLiked ? "unlike" : "like",
+        email: user.email,
       });
-      setIsLiked(!isLiked);
+      if (result?.success) {
+        setIsLiked(!isLiked);
+        return true;
+      }
+      return false;
     } catch (error) {
       console.error("Failed to update like status:", error);
-      throw error;
+      return false;
     }
-  }, [isAuthenticated, videoId, isLiked, likeMutation, router]);
-
-  const handleWatchLater = useCallback(async () => {
+  }, [isAuthenticated, videoId, isLiked, likeMutation, router, user?.email]);  const handleWatchLater = useCallback(async () => {
     if (!isAuthenticated) {
       router.push('/auth');
-      return;
+      return false;
+    }
+
+    if (!user?.email || !videoId) {
+      console.error("Missing required data for watch later operation");
+      return false;
     }
 
     try {
-      await watchLaterMutation.mutateAsync({
+      const result = await watchLaterMutation.mutateAsync({
         videoId,
         action: isInWatchLater ? "remove" : "add",
+        email: user.email,
       });
-      setIsInWatchLater(!isInWatchLater);
+      if (result?.success) {
+        setIsInWatchLater(!isInWatchLater);
+        return true;
+      }
+      return false;
     } catch (error) {
       console.error("Failed to update watch later status:", error);
-      throw error;
+      return false;
     }
-  }, [isAuthenticated, videoId, isInWatchLater, watchLaterMutation, router]);
+  }, [isAuthenticated, videoId, isInWatchLater, watchLaterMutation, router, user?.email]);
 
   const handleVideoAction = useCallback(async (type, videoId, data) => {
     if (!isAuthenticated) {

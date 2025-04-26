@@ -80,7 +80,7 @@ const useUserStore = create((set) => ({
         error: error.message,
         isAuthenticated: false,
       });
-      throw error;
+      return false;
     }
   },
 

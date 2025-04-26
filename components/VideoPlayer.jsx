@@ -128,17 +128,11 @@ const VideoPlayer = ({ videoId }) => {
               startTimeUpdate();
             } else {
               stopTimeUpdate();
-            }
-
-            if (event.data === window.YT.PlayerState.ENDED) {
+            }            if (event.data === window.YT.PlayerState.ENDED) {
               setPlayerState((prev) => ({ ...prev, progress: 100 }));
             }
-
-            if (isPlaying && isAuthenticated && user?.email) {
-              addToHistory.mutate({
-                videoId,
-                email: user.email,
-              });
+              if (isPlaying && isAuthenticated && user?.email) {
+              addToHistory.mutate(videoId);
             }
           },
         },

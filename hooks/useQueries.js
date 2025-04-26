@@ -195,21 +195,23 @@ export const useAddToHistory = () => {
   const queryClient = useQueryClient();
   const { token, user } = useUserStore();
 
-  return useMutation({
-    mutationFn: async (videoId) => {
+  return useMutation({    mutationFn: async ({ videoId, email, action }) => {
       try {
         Sentry.addBreadcrumb({
           category: "history",
           message: "Adding to watch history",
           level: "info",
-        });
-        const response = await fetch(`/api/history?email=${encodeURIComponent(user.email)}`, {
+        });        const response = await fetch(`/api/history`, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ videoId }),
+          body: JSON.stringify({ 
+            videoId, 
+            email: user.email,
+            action: "add"
+          }),
         });
         if (!response.ok) throw new Error("Failed to add to history");
         return response.json();
@@ -313,7 +315,6 @@ export const useLikedVideos = () => {
 
 export const useVideoLike = () => {
   const queryClient = useQueryClient();
-  const { user } = useUserStore();
 
   return useMutation({
     mutationFn: async ({ videoId, action }) => {
@@ -323,18 +324,17 @@ export const useVideoLike = () => {
           message: `${action} video like`,
           level: "info",
         });
-        if (!user?.email) throw new Error("User email required");
+        if (!email) throw new Error("User email required");
 
-        const response = await fetch(`/api/likes?email=${encodeURIComponent(user.email)}`, {
+        const response = await fetch("/api/likes", {
           method: "POST",
           headers: {
-            Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
             videoId,
             action,
-            email: user.email,
+            email,
           }),
         });
 
@@ -412,7 +412,6 @@ export const useWatchLater = () => {
 
 export const useWatchLaterMutation = () => {
   const queryClient = useQueryClient();
-  const { user } = useUserStore();
 
   return useMutation({
     mutationFn: async ({ videoId, action }) => {
@@ -423,6 +422,7 @@ export const useWatchLaterMutation = () => {
           level: "info",
         });
         if (!user?.email) throw new Error("User email required");
+
         const response = await fetch("/api/watch-later", {
           method: "POST",
           headers: {
@@ -431,7 +431,7 @@ export const useWatchLaterMutation = () => {
           body: JSON.stringify({
             videoId,
             action,
-            email: user.email,
+            email,
           }),
         });
 

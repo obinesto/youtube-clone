@@ -96,6 +96,7 @@ export default function VideoPage({ params }) {
                     <Button
                       variant="ghost"
                       size="sm"
+                      className={isInWatchLater ? "text-customRed" : ""}
                       onClick={() => {
                         handleWatchLater();
                         toast(
@@ -108,9 +109,7 @@ export default function VideoPage({ params }) {
                     >
                       {isLoadingWatchLater ? null : (
                         <Clock
-                          className={`h-4 w-4 ${
-                            isInWatchLater ? "fill-customRed" : ""
-                          }`}
+                          className="h-4 w-4"
                         />
                       )}
                       <span className="ml-2">{isInWatchLater ? "In Watch Later" : "Watch Later"}</span>
