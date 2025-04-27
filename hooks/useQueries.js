@@ -310,6 +310,9 @@ export const useLikedVideos = () => {
       }
     },
     enabled: Boolean(isAuthenticated && token && user?.email),
+    retry: (failureCount, error) => {
+      return failureCount < 2 && !error.message.includes("quota exceeded");
+    },
   });
 };
 
@@ -411,6 +414,11 @@ export const useWatchLater = () => {
       }
     },
     enabled: Boolean(isAuthenticated && token && user?.email),
+    staleTime: STALE_TIME,
+    cacheTime: CACHE_TIME,
+    retry: (failureCount, error) => {
+      return failureCount < 2 && !error.message.includes("quota exceeded");
+    },
   });
 };
 
@@ -491,6 +499,11 @@ export const useUserVideos = () => {
       }
     },
     enabled: Boolean(isAuthenticated && token),
+    staleTime: STALE_TIME,
+    cacheTime: CACHE_TIME,
+    retry: (failureCount, error) => {
+      return failureCount < 2 && !error.message.includes("quota exceeded");
+    },
   });
 };
 
