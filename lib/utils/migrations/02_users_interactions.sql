@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS public.videos (
   video_url TEXT NOT NULL,
   public_id TEXT NOT NULL,
   user_id UUID NOT NULL REFERENCES users(id),
+  is_user_video BOOLEAN DEFAULT true,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()),
   UNIQUE(user_id, public_id)

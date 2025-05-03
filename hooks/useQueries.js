@@ -49,6 +49,7 @@ export const useVideos = () => {
     },
     staleTime: STALE_TIME,
     cacheTime: CACHE_TIME,
+    refetchOnWindowFocus: false,
     retry: (failureCount, error) => {
       return failureCount < 2 && !error.message.includes("quota exceeded");
     },
@@ -140,6 +141,7 @@ export const useRelatedVideos = (videoId, videoTitle) => {
     enabled: Boolean(videoId && videoTitle),
     staleTime: STALE_TIME,
     cacheTime: CACHE_TIME,
+    refetchOnWindowFocus: false,
     retry: (failureCount, error) => {
       return failureCount < 2 && !error.message.includes("quota exceeded");
     },
@@ -185,9 +187,10 @@ export const useWatchHistory = () => {
       }
     },
     enabled: Boolean(isAuthenticated && token),
-    retry: (failureCount, error) => {
-      return failureCount < 2 && !error.message.includes("quota exceeded");
-    },
+    staleTime: STALE_TIME,
+    cacheTime: CACHE_TIME,
+    refetchOnWindowFocus: false,
+    retry: 1
   });
 };
 
@@ -195,22 +198,24 @@ export const useAddToHistory = () => {
   const queryClient = useQueryClient();
   const { token, user } = useUserStore();
 
-  return useMutation({    mutationFn: async ({ videoId, email, action }) => {
+  return useMutation({
+    mutationFn: async ({ videoId }) => {
       try {
         Sentry.addBreadcrumb({
           category: "history",
           message: "Adding to watch history",
           level: "info",
-        });        const response = await fetch(`/api/history`, {
+        });
+        const response = await fetch(`/api/history`, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ 
-            videoId, 
+          body: JSON.stringify({
+            videoId,
             email: user.email,
-            action: "add"
+            action: "add",
           }),
         });
         if (!response.ok) throw new Error("Failed to add to history");
@@ -238,14 +243,17 @@ export const useClearHistory = () => {
           message: "Clearing watch history",
           level: "info",
         });
-        const response = await fetch(`/api/history?email=${encodeURIComponent(user.email)}`, {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ videoId }),
-        });
+        const response = await fetch(
+          `/api/history?email=${encodeURIComponent(user.email)}`,
+          {
+            method: "DELETE",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ videoId }),
+          }
+        );
         if (!response.ok) throw new Error("Failed to clear history");
         return response.json();
       } catch (error) {
@@ -288,35 +296,70 @@ export const useLikedVideos = () => {
 
         if (!data.likes?.length) return [];
 
-        // Then get video details from YouTube API
-        const videoIds = data.likes.map((like) => like.video_id).join(",");
-        const { data: videos } = await axiosInstance.get("/videos", {
-          params: {
-            part: "snippet,statistics,contentDetails",
-            id: videoIds,
-          },
-        });
+        // Separate YouTube videos from user-uploaded videos
+        const youtubeVideos = data.likes.filter(like => !like.is_user_video);
+        const userVideos = data.likes.filter(like => like.is_user_video);
 
-        // Merge database and YouTube data
-        return data.likes.map((like) => {
-          const videoData = videos.items.find((v) => v.id === like.video_id);
-          return {
-            ...videoData,
-            likedAt: like.created_at,
-          };
-        });
+        // Get YouTube video details
+        let youtubeVideoDetails = [];
+        if (youtubeVideos.length) {
+          const videoIds = youtubeVideos.map(like => like.video_id).join(",");
+          const { data: videos } = await axiosInstance.get("/videos", {
+            params: {
+              part: "snippet,statistics,contentDetails",
+              id: videoIds,
+            },
+          });
+          youtubeVideoDetails = youtubeVideos.map(like => {
+            const videoData = videos.items.find(v => v.id === like.video_id);
+            return {
+              ...videoData,
+              likedAt: like.created_at,
+            };
+          });
+        }
+
+        // Get user-uploaded video details
+        let userVideoDetails = [];
+        if (userVideos.length) {
+          const userVideoIds = userVideos.map(like => like.video_id).join(",");
+          const userVideoResponse = await fetch(
+            `/api/videos?ids=${userVideoIds}`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+          if (!userVideoResponse.ok) throw new Error("Failed to fetch user videos");
+          const userData = await userVideoResponse.json();
+          userVideoDetails = userVideos.map(like => {
+            const videoData = userData.videos.find(v => v.id === like.video_id);
+            return {
+              ...videoData,
+              likedAt: like.created_at,
+            };
+          });
+        }
+
+        // Combine and sort all videos
+        return [...youtubeVideoDetails, ...userVideoDetails].sort(
+          (a, b) => new Date(b.likedAt) - new Date(a.likedAt)
+        );
       } catch (error) {
         return handleApiError(error);
       }
     },
     enabled: Boolean(isAuthenticated && token && user?.email),
-    retry: (failureCount, error) => {
-      return failureCount < 2 && !error.message.includes("quota exceeded");
-    },
+    staleTime: STALE_TIME,
+    cacheTime: CACHE_TIME,
+    refetchOnWindowFocus: false,
+    retry: 1
   });
 };
 
-export const useVideoLike = () => {
+export const useVideoLikeMutation = () => {
   const queryClient = useQueryClient();
   const { user } = useUserStore();
 
@@ -363,6 +406,45 @@ export const useVideoLike = () => {
   });
 };
 
+export const useIsVideoLiked = (videoId) => {
+  const { isAuthenticated, token, user } = useUserStore();
+  return useQuery({
+    queryKey: ["videoLikeStatus", videoId],
+    queryFn: async () => {
+      try{
+        Sentry.addBreadcrumb({
+          category: "likedVideo",
+          message: "Fetching liked video",
+          level: "info",
+        });
+
+        const response = await fetch(
+          `/api/likes?videoId=${videoId}&email=${encodeURIComponent(user.email)}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        if (!response.ok) {
+          console.error(`Failed to fetch like status for video ${videoId}: ${response.statusText}`);
+          throw new Error(`Failed to fetch like status: ${response.statusText}`);
+        }
+        const data = await response.json();
+        return data.isLiked ?? false;
+      } catch (error) {
+        return handleApiError(error);
+      }
+    },
+    enabled: Boolean(isAuthenticated && token && user?.email && videoId),
+    staleTime: STALE_TIME,
+    cacheTime: CACHE_TIME,
+    refetchOnWindowFocus: false,
+    retry: 1
+  });
+};
+
 // Watch Later
 export const useWatchLater = () => {
   const { isAuthenticated, token, user } = useUserStore();
@@ -392,23 +474,57 @@ export const useWatchLater = () => {
 
         if (!data.watchLater?.length) return [];
 
-        // Then get video details from YouTube API
-        const videoIds = data.watchLater.map((item) => item.video_id).join(",");
-        const { data: videos } = await axiosInstance.get("/videos", {
-          params: {
-            part: "snippet,statistics,contentDetails",
-            id: videoIds,
-          },
-        });
+        // Separate YouTube videos from user-uploaded videos
+        const youtubeVideos = data.watchLater.filter(item => !item.is_user_video);
+        const userVideos = data.watchLater.filter(item => item.is_user_video);
 
-        // Merge database and YouTube data
-        return data.watchLater.map((item) => {
-          const videoData = videos.items.find((v) => v.id === item.video_id);
-          return {
-            ...videoData,
-            savedAt: item.created_at,
-          };
-        });
+        // Get YouTube video details
+        let youtubeVideoDetails = [];
+        if (youtubeVideos.length) {
+          const videoIds = youtubeVideos.map(item => item.video_id).join(",");
+          const { data: videos } = await axiosInstance.get("/videos", {
+            params: {
+              part: "snippet,statistics,contentDetails",
+              id: videoIds,
+            },
+          });
+          youtubeVideoDetails = youtubeVideos.map(item => {
+            const videoData = videos.items.find(v => v.id === item.video_id);
+            return {
+              ...videoData,
+              savedAt: item.created_at,
+            };
+          });
+        }
+
+        // Get user-uploaded video details
+        let userVideoDetails = [];
+        if (userVideos.length) {
+          const userVideoIds = userVideos.map(item => item.video_id).join(",");
+          const userVideoResponse = await fetch(
+            `/api/videos?ids=${userVideoIds}`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+          if (!userVideoResponse.ok) throw new Error("Failed to fetch user videos");
+          const userData = await userVideoResponse.json();
+          userVideoDetails = userVideos.map(item => {
+            const videoData = userData.videos.find(v => v.id === item.video_id);
+            return {
+              ...videoData,
+              savedAt: item.created_at,
+            };
+          });
+        }
+
+        // Combine and sort all videos
+        return [...youtubeVideoDetails, ...userVideoDetails].sort(
+          (a, b) => new Date(b.savedAt) - new Date(a.savedAt)
+        );
       } catch (error) {
         return handleApiError(error);
       }
@@ -416,9 +532,8 @@ export const useWatchLater = () => {
     enabled: Boolean(isAuthenticated && token && user?.email),
     staleTime: STALE_TIME,
     cacheTime: CACHE_TIME,
-    retry: (failureCount, error) => {
-      return failureCount < 2 && !error.message.includes("quota exceeded");
-    },
+    refetchOnWindowFocus: false,
+    retry: 1
   });
 };
 
@@ -426,8 +541,7 @@ export const useWatchLaterMutation = () => {
   const queryClient = useQueryClient();
   const { user } = useUserStore();
 
-  return useMutation({
-    mutationFn: async ({ videoId, action }) => {
+  return useMutation({    mutationFn: async ({ videoId, action }) => {
       try {
         if (!user?.email) {
           throw new Error("User email required");
@@ -443,6 +557,7 @@ export const useWatchLaterMutation = () => {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
           },
           body: JSON.stringify({
             videoId,
@@ -469,12 +584,47 @@ export const useWatchLaterMutation = () => {
   });
 };
 
+export const useIsInWatchLater = (videoId) => {
+  const { isAuthenticated, token, user } = useUserStore();
+  return useQuery({
+    queryKey: ["watchLaterStatus", videoId],
+    queryFn: async () => {
+      try {
+        Sentry.addBreadcrumb({
+          category: "watch-later",
+          message: "Fetching watch later status",
+          level: "info",
+        });
+
+        const response = await fetch(
+          `/api/watch-later?videoId=${videoId}&email=${encodeURIComponent(user.email)}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        if (!response.ok) throw new Error("Failed to fetch watch later status");
+        const data = await response.json();
+        return data.isInWatchLater ?? false;
+      } catch (error) {
+        return handleApiError(error);
+      }
+    },
+    enabled: Boolean(isAuthenticated && token && user?.email && videoId),
+    staleTime: STALE_TIME,
+    cacheTime: CACHE_TIME,
+    refetchOnWindowFocus: false,
+    retry: 1
+  });
+};
+
 // User Videos
 export const useUserVideos = () => {
   const { isAuthenticated, token, user } = useUserStore();
 
-  return useQuery({
-    queryKey: ["userVideos"],
+  return useQuery({    queryKey: ["userVideos"],
     queryFn: async () => {
       try {
         Sentry.addBreadcrumb({
@@ -501,9 +651,8 @@ export const useUserVideos = () => {
     enabled: Boolean(isAuthenticated && token),
     staleTime: STALE_TIME,
     cacheTime: CACHE_TIME,
-    retry: (failureCount, error) => {
-      return failureCount < 2 && !error.message.includes("quota exceeded");
-    },
+    refetchOnWindowFocus: false,
+    retry: 1
   });
 };
 
@@ -531,7 +680,10 @@ export const useVideoMutation = () => {
           ),
         };
 
-        const response = await fetch(`/api/users?email=${encodeURIComponent(user.email)}`, config);
+        const response = await fetch(
+          `/api/users?email=${encodeURIComponent(user.email)}`,
+          config
+        );
         if (!response.ok) throw new Error(`Failed to ${type} video`);
         return response.json();
       } catch (error) {
@@ -574,6 +726,7 @@ export const useTrendingVideos = () => {
     },
     staleTime: STALE_TIME,
     cacheTime: CACHE_TIME,
+    refetchOnWindowFocus: false,
     retry: (failureCount, error) => {
       return failureCount < 2 && !error.message.includes("quota exceeded");
     },

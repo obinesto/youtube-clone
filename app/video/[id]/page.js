@@ -25,7 +25,27 @@ export default function VideoPage({ params }) {
     isLoadingWatchLater,
   } = useProtectedFeatures(id);
 
+  const [updateLike, setUpdateLike] = useState(false);
+  const [updateWatchLater, setUpdateWatchLater] = useState(false);
+
   const [viewDescription, setViewDescription] = useState(false);
+
+  // Quietly update like and watch later button when clicked
+  useEffect(() => {
+    if (isLiked) {
+      setUpdateLike(true);
+    } else {
+      setUpdateLike(false);
+    }
+  }, [isLiked]);
+
+  useEffect(() => {
+    if (isInWatchLater) {
+      setUpdateWatchLater(true);
+    } else {
+      setUpdateWatchLater(false);
+    }
+  }, [isInWatchLater]);
 
   const {
     data: video,
@@ -75,35 +95,37 @@ export default function VideoPage({ params }) {
                       size="sm"
                       className={isLiked ? "text-customRed" : ""}
                       onClick={() => {
-                        handleLike();
+                        setUpdateLike(!updateLike);
                         toast(
-                          isLiked
+                          updateLike
                             ? "Removed from Liked videos"
                             : "Added to Liked videos"
                         );
+                        handleLike();
                       }}
                       disabled={isLoadingLike}
                     >
                       {isLoadingLike ? null : (
                         <ThumbsUp
                           className={`h-4 w-4 ${
-                            isLiked ? "fill-customRed" : ""
+                            updateLike ? "fill-customRed" : ""
                           }`}
                         />
                       )}
-                      <span className="ml-2">{isLiked ? "Liked" : "Like"}</span>
+                      <span className="ml-2">{updateLike ? "Liked" : "Like"}</span>
                     </Button>
                     <Button
                       variant="ghost"
                       size="sm"
-                      className={isInWatchLater ? "text-customRed" : ""}
+                      className={updateWatchLater ? "text-customRed" : ""}
                       onClick={() => {
-                        handleWatchLater();
+                        setUpdateWatchLater(!updateWatchLater);
                         toast(
-                          isInWatchLater
+                          updateWatchLater
                             ? "Removed from Watch Later"
                             : "Added to Watch Later"
                         );
+                        handleWatchLater();
                       }}
                       disabled={isLoadingWatchLater}
                     >
@@ -111,7 +133,7 @@ export default function VideoPage({ params }) {
                         <Clock className="h-4 w-4" />
                       )}
                       <span className="ml-2">
-                        {isInWatchLater ? "In Watch Later" : "Watch Later"}
+                        {updateWatchLater ? "In Watch Later" : "Watch Later"}
                       </span>
                     </Button>
                   </>

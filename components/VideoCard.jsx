@@ -1,6 +1,5 @@
 "use client";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,11 +27,13 @@ const VideoCard = ({
   duration,
   isOwner,
 }) => {
-  const router = useRouter();
+
   const queryClient = useQueryClient();
   const { isAuthenticated } = useUserStore();
   const videoRef = useRef(null);
   const [isHovered, setIsHovered] = useState(false);
+  const [updateLike, setUpdateLike] = useState(false);
+  const [updateWatchLater, setUpdateWatchLater] = useState(false);
 
   const {
     isLiked,
@@ -90,40 +91,22 @@ const VideoCard = ({
     };
   }, [id, queryClient]);
 
-  const handleEdit = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    router.push(`/studio/edit/${id}`);
-  };
-
-  const handleDelete = async (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    // TODO: Add confirmation dialog
-    try {
-      await queryClient
-        .getMutationCache()
-        .build()
-        .execute({
-          mutationKey: ["deleteVideo"],
-          mutationFn: async () => {
-            const response = await fetch("/api/videos", {
-              method: "DELETE",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({ videoId: id }),
-            });
-            if (!response.ok) throw new Error("Failed to delete video");
-          },
-          onSuccess: () => {
-            queryClient.invalidateQueries(["userVideos"]);
-          },
-        });
-    } catch (error) {
-      console.error("Failed to delete video:", error);
+  // Quietly update like and watch later button when clicked
+  useEffect(() => {
+    if (isLiked) {
+      setUpdateLike(true);
+    } else {
+      setUpdateLike(false);
     }
-  };
+  }, [isLiked]);
+
+  useEffect(() => {
+    if (isInWatchLater) {
+      setUpdateWatchLater(true);
+    } else {
+      setUpdateWatchLater(false);
+    }
+  }, [isInWatchLater]);
 
   return (
     <Link
@@ -201,18 +184,19 @@ const VideoCard = ({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className={`bg-black/80 hover:bg-black/90 ${
-                    isLiked ? "text-customRed" : "text-white"
+                  className={`bg-black/80 hover:text-customRed ${
+                    updateLike ? "text-customRed" : "text-white"
                   }`}
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    handleLike();
+                    setUpdateLike(!updateLike);
                     toast(
-                      isLiked
+                      updateLike
                         ? "Removed from Liked videos"
                         : "Added to Liked videos"
                     );
+                    handleLike();
                   }}
                   disabled={isLoadingLike}
                 >
@@ -225,18 +209,19 @@ const VideoCard = ({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className={`bg-black/80 hover:bg-black/90 ${
-                    isInWatchLater ? "text-customRed" : "text-white"
+                  className={`bg-black/80 hover:text-customRed ${
+                    updateWatchLater ? "text-customRed" : "text-white"
                   }`}
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    handleWatchLater();
+                    setUpdateWatchLater(!updateWatchLater);
                     toast(
-                      isInWatchLater
+                      updateWatchLater
                         ? "Removed from Watch Later"
                         : "Added to Watch Later"
                     );
+                    handleWatchLater();
                   }}
                   disabled={isLoadingWatchLater}
                 >

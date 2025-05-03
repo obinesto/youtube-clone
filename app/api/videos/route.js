@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import { v2 as cloudinary } from 'cloudinary';
+import { validateRequest } from '@/lib/utils/auth';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -23,29 +24,53 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey, {
 
 export async function GET(request) {
   try {
-    const { searchParams } = new URL(request.url);
+    // Verify auth token
+    const decodedToken = await validateRequest(request);
+    if (!decodedToken) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }    const { searchParams } = new URL(request.url);
     const email = searchParams.get("email");
-    if (!email) {
-      return NextResponse.json({ error: "Email is required" }, { status: 400 });
+    const ids = searchParams.get("ids");
+
+    if (!email && !ids) {
+      return NextResponse.json({ error: "Either email or ids is required" }, { status: 400 });
     }
 
-    // First get the user_id
-    const { data: user, error: userError } = await supabase
-      .from("users")
-      .select("id")
-      .eq("email", email)
-      .single();
+    let query = supabase.from("videos").select("*");
 
-    if (userError) {
-      throw userError;
+    if (ids) {
+      // Fetch specific videos by IDs (for liked/watch later lists)
+      const videoIds = ids.split(",");
+      query = query.in("id", videoIds);
+    } else {
+      // Verify the email matches the token for user-specific requests
+      if (email !== decodedToken.email) {
+        return NextResponse.json(
+          { error: 'Unauthorized' },
+          { status: 403 }
+        );
+      }
+
+      // First get the user_id
+      const { data: user, error: userError } = await supabase
+        .from("users")
+        .select("id")
+        .eq("email", email)
+        .single();
+
+      if (userError) {
+        throw userError;
+      }
+
+      // Then get their videos
+      query = query.eq("user_id", user.id);
     }
 
-    // Then get their videos
-    const { data: videos, error: videosError } = await supabase
-      .from("videos")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false });
+    // Execute the query
+    const { data: videos, error: videosError } = await query.order("created_at", { ascending: false });
 
     if (videosError) {
       throw videosError;
@@ -59,12 +84,29 @@ export async function GET(request) {
 
 export async function POST(request) {
   try {
+    // Verify auth token
+    const decodedToken = await validateRequest(request);
+    if (!decodedToken) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
     const formData = await request.formData();
     const videoFile = formData.get("videoFile");
     const title = formData.get("title");
     const description = formData.get("description");
     const email = formData.get("email");
     const action = formData.get("action");
+
+    // Verify the email matches the token
+    if (email !== decodedToken.email) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 403 }
+      );
+    }
 
     if (!videoFile || typeof videoFile === 'string' || !title || !description || !action) {
       return NextResponse.json(
@@ -146,7 +188,6 @@ export async function POST(request) {
     const { data: existingVideo, error: findError } = await supabase
       .from("videos")
       .select("*")
-      .eq("user_id", user.id)
       .eq("video_url", cloudinaryUpload.secure_url)
       .single();
 
@@ -218,6 +259,7 @@ export async function POST(request) {
           video_url: cloudinaryUpload.secure_url,
           public_id: cloudinaryUpload.public_id,
           thumbnail_url: thumbnailUrl,
+          is_user_video: true,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         }

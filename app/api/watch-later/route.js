@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
+import { validateRequest } from '@/lib/utils/auth';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -14,13 +15,29 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey, {
 
 export async function GET(request) {
   try {
-    const { searchParams } = new URL(request.url);
+    // Verify auth token
+    const decodedToken = await validateRequest(request);
+    if (!decodedToken) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }    const { searchParams } = new URL(request.url);
     const email = searchParams.get('email');
+    const videoId = searchParams.get('videoId');
     
     if (!email) {
       return NextResponse.json(
         { error: 'Email is required' },
         { status: 400 }
+      );
+    }
+
+    // Verify the email matches the token
+    if (email !== decodedToken.email) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 403 }
       );
     }
 
@@ -35,7 +52,23 @@ export async function GET(request) {
       throw userError;
     }
 
-    // Then get their watch later videos
+    if (videoId) {
+      // Check if specific video is in watch later
+      const { data: watchLaterItem, error: watchLaterItemError } = await supabase
+        .from('watch_later')
+        .select('video_id')
+        .eq('user_id', user.id)
+        .eq('video_id', videoId)
+        .single();
+
+      if (watchLaterItemError && watchLaterItemError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+        throw watchLaterItemError;
+      }
+
+      return NextResponse.json({ isInWatchLater: !!watchLaterItem });
+    }
+
+    // Get all watch later videos
     const { data: watchLater, error: watchLaterError } = await supabase
       .from('watch_later')
       .select('video_id, created_at')
@@ -57,12 +90,29 @@ export async function GET(request) {
 
 export async function POST(request) {
   try {
+    // Verify auth token
+    const decodedToken = await validateRequest(request);
+    if (!decodedToken) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
     const { videoId, action, email } = await request.json();
 
     if (!videoId || !action || !email) {
       return NextResponse.json(
         { error: 'VideoId, action, and email are required' },
         { status: 400 }
+      );
+    }
+
+    // Verify the email matches the token
+    if (email !== decodedToken.email) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 403 }
       );
     }
 

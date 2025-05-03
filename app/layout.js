@@ -28,9 +28,8 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <head>
-        <Script src="https://www.youtube.com/iframe_api" strategy="beforeInteractive" />
+    <html lang="en" suppressHydrationWarning>      <head>
+        <Script src="https://www.youtube.com/iframe_api" strategy="afterInteractive" />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <Providers>
