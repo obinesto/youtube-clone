@@ -407,10 +407,22 @@ export const useVideoLikeMutation = () => {
 
 export const useIsVideoLiked = (videoId) => {
   const { isAuthenticated, token, user } = useUserStore();
+  const queryClient = useQueryClient();
+
   return useQuery({
     queryKey: ["videoLikeStatus", videoId],
     queryFn: async () => {
-      try{
+      try {
+        // First check if we have the data in the likedVideos query cache
+        const likedVideosCache = queryClient.getQueryData(["likedVideos"]);
+        if (likedVideosCache) {
+          const isLiked = likedVideosCache.some(video => 
+            video.id === videoId || video.id?.videoId === videoId
+          );
+          return isLiked;
+        }
+
+        // If no cache, then fetch from API
         Sentry.addBreadcrumb({
           category: "likedVideo",
           message: "Fetching liked video",
@@ -585,10 +597,22 @@ export const useWatchLaterMutation = () => {
 
 export const useIsInWatchLater = (videoId) => {
   const { isAuthenticated, token, user } = useUserStore();
+  const queryClient = useQueryClient();
+
   return useQuery({
     queryKey: ["watchLaterStatus", videoId],
     queryFn: async () => {
       try {
+        // First check if we have the data in the watchLater query cache
+        const watchLaterCache = queryClient.getQueryData(["watchLater"]);
+        if (watchLaterCache) {
+          const isInWatchLater = watchLaterCache.some(video => 
+            video.id === videoId || video.id?.videoId === videoId
+          );
+          return isInWatchLater;
+        }
+
+        // If no cache, then fetch from API
         Sentry.addBreadcrumb({
           category: "watch-later",
           message: "Fetching watch later status",

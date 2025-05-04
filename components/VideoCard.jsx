@@ -13,7 +13,7 @@ import { formatDate, formatDuration } from "@/lib/utils/dateFormat";
 import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useVideoDetails } from "@/hooks/useQueries";
-import { ThumbsUp, Bookmark, MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { ThumbsUp, Bookmark, MoreVertical, Pencil, Trash2, Share2 } from "lucide-react";
 import useUserStore from "@/hooks/useStore";
 import { useProtectedFeatures } from "@/hooks/useProtectedFeatures";
 
@@ -121,7 +121,6 @@ const VideoCard = ({
             <iframe
               ref={videoRef}
               className="w-full h-full absolute top-0 left-0"
-              frameBorder="0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
             />
@@ -167,7 +166,7 @@ const VideoCard = ({
           )}
         </div>
         <CardContent className="p-4">
-          <h3 className="text-lg font-semibold line-clamp-2 hover:text-customRed">
+          <h3 className="text-xlg font-semibold line-clamp-2 hover:text-customRed">
             {title}
           </h3>
           <p className="text-sm text-muted-foreground mt-1">{channelTitle}</p>
@@ -176,8 +175,8 @@ const VideoCard = ({
             {formattedViews && formattedDate && <span>•</span>}
             {formattedDate && <span>{formattedDate}</span>}
           </div>
-          {/* Video actions overlay */}
-          <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2">
+          {/* Video actions */}
+          <div className="flex items-center mt-1 justify-between">
             {isAuthenticated && (
               <>
                 <Button
@@ -229,6 +228,22 @@ const VideoCard = ({
                       }`}
                     />
                   )}
+                </Button>
+                <Button
+                variant="ghost"
+                  size="icon"
+                  className="bg-black/80 hover:text-customRed"
+                  disabled={isLoadingWatchLater || isLoadingLike}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    navigator.clipboard.writeText(
+                      `https://youtube-clone-cyprianobi.vercel.app/video/${id}`
+                    );
+                    toast("Link copied to clipboard");
+                  }}
+                >
+                  <Share2 className="h-4 w-4" />
                 </Button>
               </>
             )}
