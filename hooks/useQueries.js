@@ -361,15 +361,13 @@ export const useLikedVideos = () => {
 
 export const useVideoLikeMutation = () => {
   const queryClient = useQueryClient();
-  const { user } = useUserStore();
-
+  const { user, token } = useUserStore();
   return useMutation({
     mutationFn: async ({ videoId, action }) => {
       try {
         if (!user?.email) {
           throw new Error("User email required");
         }
-
         Sentry.addBreadcrumb({
           category: "likes",
           message: `${action} video like`,
@@ -380,6 +378,7 @@ export const useVideoLikeMutation = () => {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
           },
           body: JSON.stringify({
             videoId,
@@ -539,7 +538,7 @@ export const useWatchLater = () => {
 
 export const useWatchLaterMutation = () => {
   const queryClient = useQueryClient();
-  const { user } = useUserStore();
+  const { user, token } = useUserStore();
 
   return useMutation({    mutationFn: async ({ videoId, action }) => {
       try {

@@ -13,7 +13,7 @@ import { formatDate, formatDuration } from "@/lib/utils/dateFormat";
 import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useVideoDetails } from "@/hooks/useQueries";
-import { ThumbsUp, Clock, MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { ThumbsUp, Bookmark, MoreVertical, Pencil, Trash2 } from "lucide-react";
 import useUserStore from "@/hooks/useStore";
 import { useProtectedFeatures } from "@/hooks/useProtectedFeatures";
 
@@ -27,7 +27,6 @@ const VideoCard = ({
   duration,
   isOwner,
 }) => {
-
   const queryClient = useQueryClient();
   const { isAuthenticated } = useUserStore();
   const videoRef = useRef(null);
@@ -184,9 +183,7 @@ const VideoCard = ({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className={`bg-black/80 hover:text-customRed ${
-                    updateLike ? "text-customRed" : "text-white"
-                  }`}
+                  className="bg-black/80 hover:text-customRed"
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -202,16 +199,16 @@ const VideoCard = ({
                 >
                   {isLoadingLike ? null : (
                     <ThumbsUp
-                      className="h-4 w-4"
+                      className={`h-4 w-4 ${
+                        updateLike ? "fill-customRed" : ""
+                      }`}
                     />
                   )}
                 </Button>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className={`bg-black/80 hover:text-customRed ${
-                    updateWatchLater ? "text-customRed" : "text-white"
-                  }`}
+                  className="bg-black/80 hover:text-customRed"
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -226,8 +223,10 @@ const VideoCard = ({
                   disabled={isLoadingWatchLater}
                 >
                   {isLoadingWatchLater ? null : (
-                    <Clock
-                      className="h-4 w-4"
+                    <Bookmark
+                      className={`h-4 w-4 ${
+                        updateWatchLater ? "fill-customRed" : ""
+                      }`}
                     />
                   )}
                 </Button>

@@ -9,7 +9,7 @@ import {
   Library,
   History,
   PlayCircle,
-  Clock,
+  Bookmark,
   ThumbsUp,
   ChevronDown,
   ChevronUp,
@@ -18,7 +18,6 @@ import {
   Film,
   Lock
 } from "lucide-react"
-import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import {
@@ -44,7 +43,7 @@ const libraryItems = [
   { icon: Library, text: "Library", link: "/library", requiresAuth: true },
   { icon: History, text: "History", link: "/history", requiresAuth: true },
   { icon: PlayCircle, text: "Your videos", link: "/your-videos", requiresAuth: true },
-  { icon: Clock, text: "Watch later", link: "/watch-later", requiresAuth: true },
+  { icon: Bookmark, text: "Watch later", link: "/watch-later", requiresAuth: true },
   { icon: ThumbsUp, text: "Liked videos", link: "/liked-videos", requiresAuth: true }
 ]
 

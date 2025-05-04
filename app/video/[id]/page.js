@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import { use } from "react";
 import useUserStore from "@/hooks/useStore";
-import { ThumbsUp, Clock, ChevronUp, ChevronDown } from "lucide-react";
+import { ThumbsUp, Bookmark, ChevronUp, ChevronDown } from "lucide-react";
 import { useProtectedFeatures } from "@/hooks/useProtectedFeatures";
 import { formatViews, formatDate } from "@/lib/utils/dateFormat";
 import RelatedVideos from "@/components/RelatedVideos";
@@ -117,7 +117,7 @@ export default function VideoPage({ params }) {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className={updateWatchLater ? "text-customRed" : ""}
+                      className={updateWatchLater ? "fill-customRed" : ""}
                       onClick={() => {
                         setUpdateWatchLater(!updateWatchLater);
                         toast(
@@ -130,7 +130,7 @@ export default function VideoPage({ params }) {
                       disabled={isLoadingWatchLater}
                     >
                       {isLoadingWatchLater ? null : (
-                        <Clock className="h-4 w-4" />
+                        <Bookmark className="h-4 w-4" />
                       )}
                       <span className="ml-2">
                         {updateWatchLater ? "In Watch Later" : "Watch Later"}

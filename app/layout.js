@@ -28,23 +28,27 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" suppressHydrationWarning>      <head>
-        <Script src="https://www.youtube.com/iframe_api" strategy="afterInteractive" />
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <Script
+          src="https://www.youtube.com/iframe_api"
+          strategy="afterInteractive"
+        />
       </head>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      >
         <Providers>
           <ErrorBoundary>
-          <NavBar />
-          <div className="flex min-h-screen">
-            <SideBar />
-            <main className="flex-1 ml-0 md:ml-64">
-              {children}
-            </main>
-          </div>
-          <Footer />
-          <div className="fixed bottom-4 right-4 z-50">
-            <ModeToggle />
-          </div>
+            <NavBar />
+            <div className="flex min-h-screen">
+              <SideBar />
+              <main className="flex-1 ml-0 md:ml-64">{children}</main>
+            </div>
+            <Footer />
+            <div className="fixed bottom-4 right-4 z-50">
+              <ModeToggle />
+            </div>
           </ErrorBoundary>
           <Toaster />
         </Providers>
