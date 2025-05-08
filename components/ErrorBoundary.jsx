@@ -4,7 +4,6 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import * as Sentry from "@sentry/nextjs";
 import { Home, RefreshCcw } from "lucide-react";
-import Link from "next/link";
 
 class ErrorBoundary extends Component {
   constructor(props) {
@@ -24,34 +23,37 @@ class ErrorBoundary extends Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="container flex items-center justify-center pt-16">
+        <div className="flex pt-16">
           <Alert variant="destructive" className="max-w-2xl mx-auto">
-            <AlertTitle>Something went wrong!</AlertTitle>
-            <AlertDescription className="mt-2">
+            <AlertTitle className="text-center">
+              Something went wrong!
+            </AlertTitle>
+            <AlertDescription className="mt-2 text-center">
               An unexpected error occurred
             </AlertDescription>
-            <div className="flex gap-4 mt-4">
+            <div className="flex gap-16 mt-4 items-center justify-center">
               <Button
                 onClick={() => {
                   this.setState({ hasError: false });
                   window.location.reload();
                 }}
-                variant="outline"
+                variant="default"
                 className="gap-2"
               >
                 <RefreshCcw className="h-4 w-4" />
                 Refresh Page
               </Button>
-              <Link href="/">
-                <Button variant="default" className="gap-2"
+              <Button
+                variant="default"
+                className="gap-2"
                 onClick={() => {
                   this.setState({ hasError: false });
+                  window.location.href = "/";
                 }}
-                >
-                  <Home className="h-4 w-4" />
-                  Return Home
-                </Button>
-              </Link>
+              >
+                <Home className="h-4 w-4" />
+                Return Home
+              </Button>
             </div>
           </Alert>
         </div>
