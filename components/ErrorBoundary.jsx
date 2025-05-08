@@ -43,7 +43,11 @@ class ErrorBoundary extends Component {
                 Refresh Page
               </Button>
               <Link href="/">
-                <Button variant="default" className="gap-2">
+                <Button variant="default" className="gap-2"
+                onClick={() => {
+                  this.setState({ hasError: false });
+                }}
+                >
                   <Home className="h-4 w-4" />
                   Return Home
                 </Button>
