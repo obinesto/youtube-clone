@@ -7,6 +7,7 @@ import ModeToggle from "@/components/mode/ModeToggle";
 import { Providers } from "./providers";
 import { Toaster } from "@/components/ui/sonner";
 import Script from "next/script";
+import { Analytics } from "@vercel/analytics/react"
 import "./globals.css";
 
 const geistSans = Geist({
@@ -52,6 +53,7 @@ export default function RootLayout({ children }) {
           </ErrorBoundary>
           <Toaster />
         </Providers>
+        <Analytics />
       </body>
     </html>
   );

@@ -20,7 +20,6 @@ class ErrorBoundary extends Component {
     console.error("ErrorBoundary caught an error:", error, errorInfo);
     Sentry.captureException(error);
   }
-  
 
   render() {
     if (this.state.hasError) {
@@ -29,12 +28,19 @@ class ErrorBoundary extends Component {
           <Alert variant="destructive" className="max-w-2xl mx-auto">
             <AlertTitle>Something went wrong!</AlertTitle>
             <AlertDescription className="mt-2">
-              {this.state.error?.message || "An unexpected error occurred"}
+              An unexpected error occurred
             </AlertDescription>
             <div className="flex gap-4 mt-4">
-              <Button onClick={() => this.setState({ hasError: false })} variant="outline" className="gap-2">
+              <Button
+                onClick={() => {
+                  this.setState({ hasError: false });
+                  window.location.reload();
+                }}
+                variant="outline"
+                className="gap-2"
+              >
                 <RefreshCcw className="h-4 w-4" />
-                Try again
+                Refresh Page
               </Button>
               <Link href="/">
                 <Button variant="default" className="gap-2">
