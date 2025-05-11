@@ -39,7 +39,11 @@ export default function LikedVideosPage() {
     );
   }
 
-  const sortedVideos = [...(videos || [])].sort((a, b) => {
+  const validVideos = (videos || []).filter((video) =>
+    video?.id
+  );
+  
+  const sortedVideos = [...validVideos].sort((a, b) => {
     switch (sortBy) {
       case "recent":
         return new Date(b.likedAt) - new Date(a.likedAt);
@@ -53,7 +57,7 @@ export default function LikedVideosPage() {
         return 0;
     }
   });
-
+  
   return (
     <main className="container mx-auto px-4 pt-16">
       <div className="flex items-center justify-between mb-6">
@@ -82,13 +86,13 @@ export default function LikedVideosPage() {
             <VideoCard
               key={video.id}
               id={video.id}
-              title={video.snippet.title}
-              thumbnail={video.snippet.thumbnails.high?.url}
-              channelTitle={video.snippet.channelTitle}
-              createdAt={video.snippet.publishedAt}
-              views={video.statistics.viewCount}
-              duration={video.contentDetails.duration}
-              likedAt={video.likedAt}
+              title={video.snippet.title || "untitled"}
+              thumbnail={video.snippet.thumbnails.high?.url || ""}
+              channelTitle={video.snippet.channelTitle || "unknown"}
+              createdAt={video.snippet.publishedAt || ""}
+              views={video.statistics.viewCount || 0}
+              duration={video.contentDetails.duration || ""}
+              likedAt={video.likedAt || ""}
             />
           ))}
         </div>

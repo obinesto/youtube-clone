@@ -318,7 +318,7 @@ export const useLikedVideos = () => {
             };
           });
         }
-
+        
         // Get user-uploaded video details
         let userVideoDetails = [];
         if (userVideos.length) {
@@ -344,9 +344,12 @@ export const useLikedVideos = () => {
         }
 
         // Combine and sort all videos
-        return [...youtubeVideoDetails, ...userVideoDetails].sort(
-          (a, b) => new Date(b.likedAt) - new Date(a.likedAt)
-        );
+        const combinedVideos = [
+          ...youtubeVideoDetails,
+          ...userVideoDetails,
+        ].sort((a, b) => new Date(b.likedAt) - new Date(a.likedAt));
+        
+        return combinedVideos;
       } catch (error) {
         return handleApiError(error);
       }

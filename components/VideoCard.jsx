@@ -13,7 +13,14 @@ import { formatDate, formatDuration } from "@/lib/utils/dateFormat";
 import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useVideoDetails } from "@/hooks/useQueries";
-import { ThumbsUp, Bookmark, MoreVertical, Pencil, Trash2, Share2 } from "lucide-react";
+import {
+  ThumbsUp,
+  Bookmark,
+  MoreVertical,
+  Pencil,
+  Trash2,
+  Share2,
+} from "lucide-react";
 import useUserStore from "@/hooks/useStore";
 import { useProtectedFeatures } from "@/hooks/useProtectedFeatures";
 
@@ -115,7 +122,7 @@ const VideoCard = ({
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      <Card className="overflow-hidden transition-shadow hover:shadow-lg group">
+      <Card className="h-[320px] overflow-hidden transition-shadow hover:shadow-lg relative">
         <div className="relative aspect-video">
           {isHovered ? (
             <iframe
@@ -176,13 +183,13 @@ const VideoCard = ({
             {formattedDate && <span>{formattedDate}</span>}
           </div>
           {/* Video actions */}
-          <div className="flex items-center mt-1 justify-between">
+          <div className="absolute bottom-0 right-0 flex items-center w-full justify-between ">
             {isAuthenticated && (
               <>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="bg-black/80 hover:text-customRed"
+                  className="hover:text-customRed"
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -207,7 +214,7 @@ const VideoCard = ({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="bg-black/80 hover:text-customRed"
+                  className="hover:text-customRed"
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -230,9 +237,9 @@ const VideoCard = ({
                   )}
                 </Button>
                 <Button
-                variant="ghost"
+                  variant="ghost"
                   size="icon"
-                  className="bg-black/80 hover:text-customRed"
+                  className="hover:text-customRed"
                   disabled={isLoadingWatchLater || isLoadingLike}
                   onClick={(e) => {
                     e.preventDefault();
@@ -243,7 +250,9 @@ const VideoCard = ({
                     toast("Link copied to clipboard");
                   }}
                 >
-                  <Share2 className="h-4 w-4" />
+                  {isLoadingWatchLater || isLoadingLike ? null : (
+                    <Share2 className="h-4 w-4" />
+                  )}
                 </Button>
               </>
             )}
