@@ -25,7 +25,7 @@ import useUserStore from "@/hooks/useStore";
 import { useProtectedFeatures } from "@/hooks/useProtectedFeatures";
 
 const VideoCard = ({
-  id,
+  videoId,
   title,
   thumbnail,
   channelTitle,
@@ -48,7 +48,7 @@ const VideoCard = ({
     handleWatchLater,
     isLoadingLike,
     isLoadingWatchLater,
-  } = useProtectedFeatures(id);
+  } = useProtectedFeatures(videoId);
 
   const formattedDate = formatDate(createdAt);
   const formattedDuration = formatDuration(duration);
@@ -58,7 +58,7 @@ const VideoCard = ({
   const handleMouseEnter = () => {
     setIsHovered(true);
     if (videoRef.current) {
-      videoRef.current.src = `https://www.youtube.com/embed/${id}?autoplay=1&mute=0&controls=0&modestbranding=1&playsinline=1`;
+      videoRef.current.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&modestbranding=1&playsinline=1`;
     }
   };
 
@@ -76,8 +76,8 @@ const VideoCard = ({
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             queryClient.prefetchQuery({
-              queryKey: ["video", id],
-              queryFn: () => useVideoDetails(id).queryFn(),
+              queryKey: ["video", videoId],
+              queryFn: () => useVideoDetails(videoId).queryFn(),
             });
           }
         });
@@ -85,7 +85,7 @@ const VideoCard = ({
       { rootMargin: "50px" }
     );
 
-    const element = document.getElementById(`video-card-${id}`);
+    const element = document.getElementById(`video-card-${videoId}`);
     if (element) {
       observer.observe(element);
     }
@@ -95,29 +95,21 @@ const VideoCard = ({
         observer.unobserve(element);
       }
     };
-  }, [id, queryClient]);
+  }, [videoId, queryClient]);
 
   // Quietly update like and watch later button when clicked
   useEffect(() => {
-    if (isLiked) {
-      setUpdateLike(true);
-    } else {
-      setUpdateLike(false);
-    }
+    setUpdateLike(isLiked);
   }, [isLiked]);
 
   useEffect(() => {
-    if (isInWatchLater) {
-      setUpdateWatchLater(true);
-    } else {
-      setUpdateWatchLater(false);
-    }
+    setUpdateWatchLater(isInWatchLater);
   }, [isInWatchLater]);
 
   return (
     <Link
-      href={`/video/${id}`}
-      id={`video-card-${id}`}
+      href={`/video/${videoId}`}
+      id={`video-card-${videoId}`}
       className="block transition-transform hover:scale-[1.02] duration-200"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
@@ -190,16 +182,17 @@ const VideoCard = ({
                   variant="ghost"
                   size="icon"
                   className="hover:text-customRed"
-                  onClick={(e) => {
+                  onClick={async (e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    setUpdateLike(!updateLike);
-                    toast(
-                      updateLike
-                        ? "Removed from Liked videos"
-                        : "Added to Liked videos"
-                    );
-                    handleLike();
+                    setUpdateLike(!isLiked); // Optimistic update
+
+                    try {
+                      await handleLike();
+                    } catch (error) {
+                      toast(error.message);
+                      setUpdateLike(isLiked); // Revert optimistic update
+                    }
                   }}
                   disabled={isLoadingLike}
                 >
@@ -215,19 +208,22 @@ const VideoCard = ({
                   variant="ghost"
                   size="icon"
                   className="hover:text-customRed"
-                  onClick={(e) => {
+                  onClick={async (e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    setUpdateWatchLater(!updateWatchLater);
-                    toast(
-                      updateWatchLater
-                        ? "Removed from Watch Later"
-                        : "Added to Watch Later"
-                    );
-                    handleWatchLater();
+                    setUpdateWatchLater(!isInWatchLater); // Optimistic update
+
+                    try {
+                      await handleWatchLater();
+                    } catch (error) {
+                      console.error("Error updating watch later:", error);
+                      toast(error.message || "Failed to update watch later status.");
+                      setUpdateWatchLater(isInWatchLater); // Revert optimistic update
+                    }
                   }}
                   disabled={isLoadingWatchLater}
                 >
+
                   {isLoadingWatchLater ? null : (
                     <Bookmark
                       className={`h-4 w-4 ${
@@ -245,7 +241,7 @@ const VideoCard = ({
                     e.preventDefault();
                     e.stopPropagation();
                     navigator.clipboard.writeText(
-                      `https://youtube-clone-cyprianobi.vercel.app/video/${id}`
+                      `https://youtube-clone-cyprianobi.vercel.app/video/${videoId}`
                     );
                     toast("Link copied to clipboard");
                   }}

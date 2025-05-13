@@ -33,7 +33,7 @@ export default function RootLayout({ children }) {
       <head>
         <Script
           src="https://www.youtube.com/iframe_api"
-          strategy="lazyOnload"
+          strategy="afterInteractive"
         />
       </head>
       <body

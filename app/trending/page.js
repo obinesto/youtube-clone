@@ -37,7 +37,7 @@ export default function TrendingPage() {
           : videos?.map((video) => (
               <VideoCard
                 key={video.id}
-                id={video.id}
+                videoId={video.id}
                 title={video.snippet.title}
                 thumbnail={video.snippet.thumbnails.high?.url}
                 channelTitle={video.snippet.channelTitle}

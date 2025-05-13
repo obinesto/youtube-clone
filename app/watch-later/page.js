@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useWatchLater } from "@/hooks/useQueries";
 import VideoCard from "@/components/VideoCard";
 import useUserStore from "@/hooks/useStore";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import LoadingProtected from "@/components/LoadingProtected";
 import { AlertTriangle } from "lucide-react";
 import {
@@ -27,11 +27,14 @@ export default function WatchLaterPage() {
 
   if (error) {
     return (
-      <div className="container mx-auto py-6">
+      <div className="flex flex-col pt-16">
         <h1 className="text-3xl font-bold mb-6">Watch Later</h1>
-        <Alert variant="destructive">
-          <AlertDescription className="flex items-center gap-2">
+        <Alert variant="destructive" className="max-w-2xl mx-auto">
+          <AlertTitle className="flex items-center justify-center gap-2">
             <AlertTriangle className="h-4 w-4" />
+            Something went wrong!
+          </AlertTitle>
+          <AlertDescription className="mt-2 text-center">
             {error.message}
           </AlertDescription>
         </Alert>
@@ -81,14 +84,13 @@ export default function WatchLaterPage() {
           {sortedVideos.map((video) => (
             <VideoCard
               key={video.id}
-              id={video.id}
+              videoId={video.id}
               title={video.snippet.title}
               thumbnail={video.snippet.thumbnails.high?.url}
               channelTitle={video.snippet.channelTitle}
               createdAt={video.snippet.publishedAt}
               views={video.statistics.viewCount}
               duration={video.contentDetails.duration}
-              savedAt={video.savedAt}
             />
           ))}
         </div>

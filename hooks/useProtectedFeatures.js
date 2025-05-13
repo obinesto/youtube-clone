@@ -1,4 +1,4 @@
-import { useCallback, useState, useEffect } from "react";
+import { useCallback } from "react";
 import { useRouter } from "next/navigation";
 import useUserStore from "./useStore";
 import {
@@ -50,12 +50,17 @@ export function useProtectedFeatures(videoId) {
       return;
     }
 
-    likeMutation.mutate({
-      videoId,
-      action: isLikedData ? "unlike" : "like",
-      email: userEmail,
-      token,
-    });
+    try{
+      await likeMutation.mutateAsync({
+        videoId,
+        action: isLikedData ? "unlike" : "like",
+        email: userEmail,
+        token,
+      });
+    } catch (error) {
+      console.error("Error liking/unliking video:", error);
+      throw new Error("Failed to update like status. Try again later.");
+    }
   }, [isAuthenticated, videoId, isLikedData, likeMutation, router, userEmail, token]);
 
   const handleWatchLater = useCallback(async () => {
@@ -69,12 +74,17 @@ export function useProtectedFeatures(videoId) {
       return;
     }
 
-    watchLaterMutation.mutate({
-      videoId,
-      action: isInWatchLaterData ? "remove" : "add",
-      email: userEmail,
-      token,
-    });
+    try {
+      await watchLaterMutation.mutateAsync({
+        videoId,
+        action: isInWatchLaterData ? "remove" : "add",
+        email: userEmail,
+        token,
+      });
+    } catch (error) {
+      console.error("Error adding/removing to watch later:", error);
+      throw new Error("Failed to update watch later status. Try again later.");
+    }
   }, [
     isAuthenticated,
     videoId,

@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useLikedVideos } from "@/hooks/useQueries";
 import VideoCard from "@/components/VideoCard";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import useUserStore from "@/hooks/useStore";
 import LoadingProtected from "@/components/LoadingProtected";
 import { AlertTriangle } from "lucide-react";
@@ -27,11 +27,14 @@ export default function LikedVideosPage() {
 
   if (error) {
     return (
-      <div className="container mx-auto py-6">
+      <div className="flex flex-col pt-16">
         <h1 className="text-3xl font-bold mb-6">Liked Videos</h1>
-        <Alert variant="destructive">
-          <AlertDescription className="flex items-center gap-2">
+        <Alert variant="destructive" className="max-w-2xl mx-auto">
+          <AlertTitle className="flex items-center justify-center gap-2">
             <AlertTriangle className="h-4 w-4" />
+            Something went wrong!
+          </AlertTitle>
+          <AlertDescription className="mt-2 text-center">
             {error.message}
           </AlertDescription>
         </Alert>
@@ -39,10 +42,8 @@ export default function LikedVideosPage() {
     );
   }
 
-  const validVideos = (videos || []).filter((video) =>
-    video?.id
-  );
-  
+  const validVideos = (videos || []).filter((video) => video?.id);
+
   const sortedVideos = [...validVideos].sort((a, b) => {
     switch (sortBy) {
       case "recent":
@@ -57,7 +58,7 @@ export default function LikedVideosPage() {
         return 0;
     }
   });
-  
+
   return (
     <main className="container mx-auto px-4 pt-16">
       <div className="flex items-center justify-between mb-6">
@@ -85,14 +86,13 @@ export default function LikedVideosPage() {
           {sortedVideos.map((video) => (
             <VideoCard
               key={video.id}
-              id={video.id}
-              title={video.snippet.title || "untitled"}
-              thumbnail={video.snippet.thumbnails.high?.url || ""}
-              channelTitle={video.snippet.channelTitle || "unknown"}
-              createdAt={video.snippet.publishedAt || ""}
-              views={video.statistics.viewCount || 0}
-              duration={video.contentDetails.duration || ""}
-              likedAt={video.likedAt || ""}
+              videoId={video.id}
+              title={video.snippet.title}
+              thumbnail={video.snippet.thumbnails.high?.url}
+              channelTitle={video.snippet.channelTitle}
+              createdAt={video.snippet.publishedAt}
+              views={video.statistics.viewCount}
+              duration={video.contentDetails.duration}
             />
           ))}
         </div>

@@ -36,12 +36,11 @@ export default function Home() {
             videos?.map((video) => (
                 <VideoCard
                   key={video.id.videoId}
-                  id={video.id.videoId}
+                  videoId={video.id.videoId}
                   channelTitle={video.snippet.channelTitle}
                   title={video.snippet.title}
                   thumbnail={video.snippet.thumbnails.high.url}
                   createdAt={video.snippet.publishedAt}
-                  description={video.snippet.description}
                   views={video.statistics?.viewCount}
                   duration={video.contentDetails?.duration}
                 />
