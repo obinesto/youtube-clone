@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 
 export function useYouTubePlayer() {
   const [isAPIReady, setIsAPIReady] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -24,16 +25,20 @@ export function useYouTubePlayer() {
     const tag = document.createElement("script");
     tag.src = "https://www.youtube.com/iframe_api";
     tag.async = true;
-    tag.onerror = () => console.error("Failed to load YouTube IFrame API");
-    
+    tag.onerror = () => {
+      if (isMounted) {
+        console.error("Failed to load YouTube IFrame API");
+        setError(new Error("Failed to load YouTube IFrame API"));
+      }
+    };
+
     const firstScriptTag = document.getElementsByTagName("script")[0];
     firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
     return () => {
       isMounted = false;
-      window.onYouTubeIframeAPIReady = null;
     };
   }, []);
 
-  return { isAPIReady };
+  return { isAPIReady, error };
 }

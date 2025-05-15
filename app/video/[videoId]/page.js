@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import { use } from "react";
 import useUserStore from "@/hooks/useStore";
-import { ThumbsUp, Bookmark, ChevronUp, ChevronDown } from "lucide-react";
+import { ThumbsUp, Bookmark, Share2, ChevronUp, ChevronDown } from "lucide-react";
 import { useProtectedFeatures } from "@/hooks/useProtectedFeatures";
 import { formatViews, formatDate } from "@/lib/utils/dateFormat";
 import RelatedVideos from "@/components/RelatedVideos";
@@ -15,49 +15,40 @@ import RelatedVideos from "@/components/RelatedVideos";
 export default function VideoPage({ params }) {
   const { isAuthenticated } = useUserStore();
   const resolvedParams = use(params);
-  const { id } = resolvedParams;
+  const { videoId } = resolvedParams;
   const {
-    handleLike,
-    handleWatchLater,
     isLiked,
-    isInWatchLater,
+    isSaved,
+    handleLike,
+    handleSavedVideo,
     isLoadingLike,
-    isLoadingWatchLater,
-  } = useProtectedFeatures(id);
+    isLoadingSavedVideo,
+  } = useProtectedFeatures(videoId);
 
   const [updateLike, setUpdateLike] = useState(false);
-  const [updateWatchLater, setUpdateWatchLater] = useState(false);
+   const [updateSavedVideo, setUpdateSavedVideo] = useState(false);
 
   const [viewDescription, setViewDescription] = useState(false);
 
-  // Quietly update like and watch later button when clicked
+  // Quietly update like and saved video button after clicking
   useEffect(() => {
-    if (isLiked) {
-      setUpdateLike(true);
-    } else {
-      setUpdateLike(false);
-    }
+    setUpdateLike(isLiked);
   }, [isLiked]);
 
   useEffect(() => {
-    if (isInWatchLater) {
-      setUpdateWatchLater(true);
-    } else {
-      setUpdateWatchLater(false);
-    }
-  }, [isInWatchLater]);
+    setUpdateSavedVideo(isSaved);
+  }, [isSaved]);
 
   const {
     data: video,
-    isLoading: isLoadingVideo,
     isError: isVideoError,
     error: videoError,
-  } = useVideoDetails(id);
+  } = useVideoDetails(videoId);
 
   useEffect(() => {
     // Scroll to top when video ID changes
     window.scrollTo(0, 0);
-  }, [id]);
+  }, [videoId]);
 
   if (isVideoError) {
     return (
@@ -75,7 +66,7 @@ export default function VideoPage({ params }) {
     <main className="flex min-h-screen flex-col pt-16">
       <div className="flex-1 flex flex-col lg:flex-row gap-4 p-4">
         <div className="flex-1">
-          <VideoPlayer videoId={id} />
+          <VideoPlayer videoId={videoId} />
           {/* Video Details */}
           <div className="py-4">
             <h1 className="text-2xl font-semibold mb-2">
@@ -93,15 +84,16 @@ export default function VideoPage({ params }) {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className={isLiked ? "text-customRed" : ""}
-                      onClick={() => {
-                        setUpdateLike(!updateLike);
-                        toast(
-                          updateLike
-                            ? "Removed from Liked videos"
-                            : "Added to Liked videos"
-                        );
-                        handleLike();
+                      className={updateLike ? "text-customRed" : ""}
+                      onClick={async (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setUpdateLike(prev => !prev);
+                        try {
+                          await handleLike();
+                        } catch (error) {
+                          toast(error.message);
+                        }
                       }}
                       disabled={isLoadingLike}
                     >
@@ -112,30 +104,55 @@ export default function VideoPage({ params }) {
                           }`}
                         />
                       )}
-                      <span className="ml-2">{updateLike ? "Liked" : "Like"}</span>
+                      <span className="ml-2">
+                        {updateLike ? "Liked" : "Like"}
+                      </span>
                     </Button>
                     <Button
                       variant="ghost"
                       size="sm"
-                      className={updateWatchLater ? "fill-customRed" : ""}
-                      onClick={() => {
-                        setUpdateWatchLater(!updateWatchLater);
-                        toast(
-                          updateWatchLater
-                            ? "Removed from Watch Later"
-                            : "Added to Watch Later"
-                        );
-                        handleWatchLater();
+                      className={updateSavedVideo ? "text-customRed" : ""}
+                      onClick={async (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setUpdateSavedVideo(prev => !prev);
+                        try {
+                          await handleSavedVideo();
+                        } catch (error) {
+                          toast(error.message);
+                        }
                       }}
-                      disabled={isLoadingWatchLater}
+                      disabled={isLoadingSavedVideo}
                     >
-                      {isLoadingWatchLater ? null : (
-                        <Bookmark className="h-4 w-4" />
+                      {isLoadingSavedVideo ? null : (
+                        <Bookmark
+                          className={`h-4 w-4 ${
+                            updateSavedVideo ? "fill-customRed" : ""
+                          }`}
+                        />
                       )}
                       <span className="ml-2">
-                        {updateWatchLater ? "In Watch Later" : "Watch Later"}
+                        {updateSavedVideo ? "Saved" : "Save Video"}
                       </span>
                     </Button>
+                    <Button
+                  variant="ghost"
+                  size="icon"
+                  className="hover:text-customRed"
+                  disabled={isLoadingSavedVideo || isLoadingLike}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    navigator.clipboard.writeText(
+                      `https://youtube-clone-cyprianobi.vercel.app/video/${videoId}`
+                    );
+                    toast("Link copied to clipboard");
+                  }}
+                >
+                  {isLoadingSavedVideo || isLoadingLike ? null : (
+                    <Share2 className="h-4 w-4" />
+                  )}
+                </Button>
                   </>
                 )}
               </div>
@@ -174,7 +191,7 @@ export default function VideoPage({ params }) {
         </div>
       </div>
       {/* Related Videos */}
-      <RelatedVideos currentVideoId={id} videoTitle={video?.snippet?.title} />
+      <RelatedVideos currentVideoId={videoId} videoTitle={video?.snippet?.title} />
     </main>
   );
 }

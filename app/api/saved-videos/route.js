@@ -53,9 +53,9 @@ export async function GET(request) {
     }
 
     if (videoId) {
-      // Check if specific video is in watch later
+      // Check if specific video is in saved videos
       const { data: watchLaterItem, error: watchLaterItemError } = await supabase
-        .from('watch_later')
+        .from('saved_videos')
         .select('video_id')
         .eq('user_id', user.id)
         .eq('video_id', videoId)
@@ -68,18 +68,18 @@ export async function GET(request) {
       return NextResponse.json({ isInWatchLater: !!watchLaterItem });
     }
 
-    // Get all watch later videos
-    const { data: watchLater, error: watchLaterError } = await supabase
-      .from('watch_later')
+    // Get all saved videos
+    const { data: savedVideos, error: savedVideosError } = await supabase
+      .from('saved_videos')
       .select('video_id, created_at')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false });
 
-    if (watchLaterError) {
-      throw watchLaterError;
+    if (savedVideosError) {
+      throw savedVideosError;
     }
 
-    return NextResponse.json({ watchLater });
+    return NextResponse.json({ savedVideos });
   } catch (error) {
     return NextResponse.json(
       { error: error.message },
@@ -129,19 +129,19 @@ export async function POST(request) {
 
     if (action === 'add') {
       const { error } = await supabase
-        .from('watch_later')
+        .from('saved_videos')
         .insert([{ 
           user_id: user.id,
           video_id: videoId
         }]);
 
       if (error?.code === '23505') { // Unique violation
-        return NextResponse.json({ success: true }); // Already in watch later
+        return NextResponse.json({ success: true }); // Already in saved videos
       }
       if (error) throw error;
     } else if (action === 'remove') {
       const { error } = await supabase
-        .from('watch_later')
+        .from('saved_videos')
         .delete()
         .eq('user_id', user.id)
         .eq('video_id', videoId);
@@ -151,7 +151,7 @@ export async function POST(request) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Watch later operation error:', error);
+    console.error('Saved videos operation error:', error);
     return NextResponse.json(
       { error: error.message },
       { status: 500 }

@@ -5,22 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Play, Pause, Volume2, VolumeX, Maximize } from "lucide-react";
 import { useYouTubePlayer } from "@/hooks/useYouTubePlayer";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import useUserStore from "@/hooks/useStore";
 import { useAddToHistory } from "@/hooks/useQueries";
 
-// Move constants outside component to prevent recreation
-const KEYBOARD_SHORTCUTS = {
-  SPACE: " ",
-  LEFT_ARROW: "ArrowLeft",
-  RIGHT_ARROW: "ArrowRight",
-  UP_ARROW: "ArrowUp",
-  DOWN_ARROW: "ArrowDown",
-  F: "f",
-  M: "m",
-};
-
 const VideoPlayer = ({ videoId }) => {
-  const { isAPIReady } = useYouTubePlayer();
+  const { isAPIReady, error: apiError } = useYouTubePlayer();
   const { isAuthenticated, user } = useUserStore();
   const addToHistory = useAddToHistory();
 
@@ -95,8 +85,8 @@ const VideoPlayer = ({ videoId }) => {
 
   // Update initialization effect to be more stable
   useEffect(() => {
-    if (!isAPIReady || !playerRef.current) return;
-    
+    if (!isAPIReady || !playerRef.current || apiError) return;
+
     // Only initialize if there is no player instance
     if (!playerInstance.current) {
       playerInstance.current = new window.YT.Player(playerRef.current, {
@@ -128,11 +118,12 @@ const VideoPlayer = ({ videoId }) => {
               startTimeUpdate();
             } else {
               stopTimeUpdate();
-            }            if (event.data === window.YT.PlayerState.ENDED) {
+            }
+            if (event.data === window.YT.PlayerState.ENDED) {
               setPlayerState((prev) => ({ ...prev, progress: 100 }));
             }
-              if (isPlaying && isAuthenticated && user?.email) {
-              addToHistory.mutate(videoId);
+            if (isPlaying && isAuthenticated && user?.email) {
+              addToHistory.mutate({ videoId });
             }
           },
         },
@@ -147,19 +138,19 @@ const VideoPlayer = ({ videoId }) => {
         playerInstance.current = null;
       }
     };
-  }, [isAPIReady]); // Reduced dependencies to prevent recreation
+  }, [isAPIReady, apiError]); // Reduce dependencies to only necessary ones to prevent unnecessary re-renders
 
   // Separate effect for handling video ID changes
   useEffect(() => {
-    if (playerInstance.current && videoId) {
+    if (playerInstance.current && videoId && !apiError) {
       playerInstance.current.loadVideoById(videoId);
-      setPlayerState(prev => ({
+      setPlayerState((prev) => ({
         ...prev,
         currentTime: 0,
         progress: 0,
       }));
     }
-  }, [videoId]);
+  }, [videoId, apiError]);
 
   const formatTime = (seconds) => {
     const minutes = Math.floor(seconds / 60);
@@ -167,10 +158,23 @@ const VideoPlayer = ({ videoId }) => {
     return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
   };
 
+  if (apiError) {
+    return (
+      <div className="relative bg-black rounded-lg overflow-hidden aspect-video flex items-center justify-center text-white p-4">
+        <Alert variant="destructive" className="w-full">
+          <AlertTitle>Error Loading Video</AlertTitle>
+          <AlertDescription>
+            Error loading video player: {apiError.message}
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
   if (!isAPIReady) {
     return (
       <div className="relative bg-black rounded-lg overflow-hidden">
-        <div className="relative pt-[56.25%]">
+        <div className="relative pt-[45%]">
           <Skeleton className="absolute top-0 left-0 w-full h-full" />
         </div>
       </div>
@@ -185,7 +189,7 @@ const VideoPlayer = ({ videoId }) => {
       role="region"
       aria-label="Video player"
     >
-      <div className="relative pt-[56.25%]">
+      <div className="relative pt-[45%]">
         <div
           id={`player-${videoId}`}
           ref={playerRef}
@@ -224,7 +228,11 @@ const VideoPlayer = ({ videoId }) => {
                 <Play className="h-5 w-5" />
               )}
             </Button>
-            <span className="text-white text-sm" role="timer" aria-label="Video time">
+            <span
+              className="text-white text-sm"
+              role="timer"
+              aria-label="Video time"
+            >
               {formatTime(currentTime)} / {formatTime(duration)}
             </span>
           </div>
@@ -233,7 +241,9 @@ const VideoPlayer = ({ videoId }) => {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => handleVolumeChange([volume === 0 ? prevVolume.current : 0])}
+              onClick={() =>
+                handleVolumeChange([volume === 0 ? prevVolume.current : 0])
+              }
               className="text-white hover:bg-white/20"
               aria-label={volume === 0 ? "Unmute" : "Mute"}
             >
@@ -257,7 +267,8 @@ const VideoPlayer = ({ videoId }) => {
               variant="ghost"
               size="icon"
               onClick={() => {
-                const playerElement = playerRef.current?.parentElement?.parentElement;
+                const playerElement =
+                  playerRef.current?.parentElement?.parentElement;
                 if (playerElement) {
                   if (document.fullscreenElement) {
                     document.exitFullscreen();
@@ -276,7 +287,9 @@ const VideoPlayer = ({ videoId }) => {
       </div>
 
       <div className="sr-only" aria-live="polite">
-        {`Video ${isPlaying ? "playing" : "paused"} - ${formatTime(currentTime)} of ${formatTime(duration)}`}
+        {`Video ${isPlaying ? "playing" : "paused"} - ${formatTime(
+          currentTime
+        )} of ${formatTime(duration)}`}
       </div>
     </div>
   );

@@ -5,15 +5,15 @@ import {
   // Queries
   useWatchHistory,
   useLikedVideos,
-  useWatchLater,
+  useSavedVideos,
   useUserVideos,
   // Mutations
   useVideoLikeMutation,
-  useWatchLaterMutation,
+  useSavedVideoMutation,
   useVideoMutation,
   // Status Queries
   useIsVideoLiked,
-  useIsInWatchLater,
+  useIsInSavedVideos,
 } from "./useQueries";
 
 export function useProtectedFeatures(videoId) {
@@ -24,19 +24,20 @@ export function useProtectedFeatures(videoId) {
   // Queries
   const { data: watchHistory, isLoading: isLoadingHistory } = useWatchHistory();
   const { data: likedVideos, isLoading: isLoadingLikes } = useLikedVideos();
-  const { data: watchLater, isLoading: isLoadingWatchLater } = useWatchLater();
+  const { data: savedVideos, isLoading: isLoadingSavedVideos } =
+    useSavedVideos();
   const { data: userVideos, isLoading: isLoadingUserVideos } = useUserVideos();
 
   // Mutations
   const likeMutation = useVideoLikeMutation();
-  const watchLaterMutation = useWatchLaterMutation();
+  const savedVideoMutation = useSavedVideoMutation();
   const videoMutation = useVideoMutation();
 
   // Specific Status Queries
   const { data: isLikedData, isLoading: isLoadingLikeStatus } =
     useIsVideoLiked(videoId);
-  const { data: isInWatchLaterData, isLoading: isLoadingWatchLaterStatus } =
-    useIsInWatchLater(videoId);
+  const { data: isInSavedVideosData, isLoading: isLoadingSavedVideoStatus } =
+    useIsInSavedVideos(videoId);
 
   // Action Handlers
   const handleLike = useCallback(async () => {
@@ -50,7 +51,7 @@ export function useProtectedFeatures(videoId) {
       return;
     }
 
-    try{
+    try {
       await likeMutation.mutateAsync({
         videoId,
         action: isLikedData ? "unlike" : "like",
@@ -61,35 +62,43 @@ export function useProtectedFeatures(videoId) {
       console.error("Error liking/unliking video:", error);
       throw new Error("Failed to update like status. Try again later.");
     }
-  }, [isAuthenticated, videoId, isLikedData, likeMutation, router, userEmail, token]);
+  }, [
+    isAuthenticated,
+    videoId,
+    isLikedData,
+    likeMutation,
+    router,
+    userEmail,
+    token,
+  ]);
 
-  const handleWatchLater = useCallback(async () => {
+  const handleSavedVideo = useCallback(async () => {
     if (!isAuthenticated) {
       router.push("/auth");
       return;
     }
 
     if (!userEmail || !videoId) {
-      console.error("Missing required data for watch later operation");
+      console.error("Missing required data for saved video operation");
       return;
     }
 
     try {
-      await watchLaterMutation.mutateAsync({
+      await savedVideoMutation.mutateAsync({
         videoId,
-        action: isInWatchLaterData ? "remove" : "add",
+        action: isInSavedVideosData ? "remove" : "add",
         email: userEmail,
         token,
       });
     } catch (error) {
-      console.error("Error adding/removing to watch later:", error);
-      throw new Error("Failed to update watch later status. Try again later.");
+      console.error("Error adding/removing to saved videos:", error);
+      throw new Error("Failed to update saved video status. Try again later.");
     }
   }, [
     isAuthenticated,
     videoId,
-    isInWatchLaterData,
-    watchLaterMutation,
+    isInSavedVideosData,
+    savedVideoMutation,
     router,
     userEmail,
     token,
@@ -104,47 +113,48 @@ export function useProtectedFeatures(videoId) {
       if (!videoMutation) {
         console.error("videoMutation is not available");
         return;
-    }
+      }
       return videoMutation.mutateAsync({ type, videoId: actionVideoId, data });
     },
     [isAuthenticated, videoMutation, router]
   );
 
-  const checkVideoStatus = useCallback(
-    (checkVideoId) => {
-      if (!isAuthenticated) return {};
+  // const checkVideoStatus = useCallback(
+  //   (checkVideoId) => {
+  //     if (!isAuthenticated) return {};
 
-      return {
-        isLiked: likedVideos?.some((v) => v.video_id === checkVideoId),
-        isSaved: watchLater?.some((v) => v.video_id === checkVideoId),
-        isOwned: userVideos?.some((v) => v.id === checkVideoId),
-      };
-    },
-    [isAuthenticated, likedVideos, watchLater, userVideos]
-  );
+  //     return {
+  //       isLiked: likedVideos?.some((v) => v.video_id === checkVideoId),
+  //       isSaved: savedVideos?.some((v) => v.video_id === checkVideoId),
+  //       isOwned: userVideos?.some((v) => v.id === checkVideoId),
+  //     };
+  //   },
+  //   [isAuthenticated, likedVideos, savedVideos, userVideos]
+  // );
   return {
     // Data
     watchHistory,
     likedVideos,
-    watchLater,
+    savedVideos,
     userVideos,
 
     // Loading states
     isLoadingHistory,
     isLoadingLikes,
-    isLoadingWatchLater,
+    isLoadingSavedVideos,
     isLoadingUserVideos,
 
     // Action handlers
     handleLike,
-    handleWatchLater,
+    handleSavedVideo,
     handleVideoAction,
-    checkVideoStatus,
+    // checkVideoStatus,
 
     // Like and Watch Later status
     isLiked: isLikedData ?? false,
-    isInWatchLater: isInWatchLaterData ?? false,
+    isSaved: isInSavedVideosData ?? false,
     isLoadingLike: likeMutation.isLoading || isLoadingLikeStatus,
-    isLoadingWatchLater: watchLaterMutation.isLoading || isLoadingWatchLaterStatus,
+    isLoadingSavedVideo:
+      savedVideoMutation.isLoading || isLoadingSavedVideoStatus,
   };
 }

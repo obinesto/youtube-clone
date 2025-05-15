@@ -22,8 +22,8 @@ CREATE TABLE IF NOT EXISTS public.video_likes (
   UNIQUE(user_id, video_id)
 );
 
--- Create watch_later table
-CREATE TABLE IF NOT EXISTS public.watch_later (
+-- Create saved_videos table
+CREATE TABLE IF NOT EXISTS public.saved_videos (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID NOT NULL REFERENCES users(id),
   video_id UUID NOT NULL REFERENCES videos(id),
@@ -43,8 +43,8 @@ CREATE TABLE IF NOT EXISTS public.watch_history (
 -- Create indexes
 CREATE INDEX IF NOT EXISTS video_likes_user_id_idx ON public.video_likes(user_id);
 CREATE INDEX IF NOT EXISTS video_likes_video_id_idx ON public.video_likes(video_id);
-CREATE INDEX IF NOT EXISTS watch_later_user_id_idx ON public.watch_later(user_id);
-CREATE INDEX IF NOT EXISTS watch_later_video_id_idx ON public.watch_later(video_id);
+CREATE INDEX IF NOT EXISTS watch_later_user_id_idx ON public.saved_videos(user_id);
+CREATE INDEX IF NOT EXISTS watch_later_video_id_idx ON public.saved_videos(video_id);
 CREATE INDEX IF NOT EXISTS watch_history_user_id_idx ON public.watch_history(user_id);
 CREATE INDEX IF NOT EXISTS watch_history_video_id_idx ON public.watch_history(video_id);
 CREATE INDEX IF NOT EXISTS videos_user_id_idx ON public.videos(user_id);

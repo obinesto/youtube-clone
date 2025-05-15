@@ -179,7 +179,66 @@ export const useWatchHistory = () => {
           );
         }
         const data = await response.json();
-        return data.history || [];
+
+        // Separate YouTube videos from user-uploaded videos
+        const youtubeVideos = data.watchHistory.filter((history) => !history.is_user_video);
+        const userVideos = data.watchHistory.filter((history) => history.is_user_video);
+
+        // Get YouTube video details
+        let youtubeVideoDetails = [];
+        if (youtubeVideos.length) {
+          const videoIds = youtubeVideos.map((video) => video.video_id).join(",");
+          const { data: videos } = await axiosInstance.get("/videos", {
+            params: {
+              part: "snippet,statistics,contentDetails",
+              id: videoIds,
+            },
+          });
+          youtubeVideoDetails = youtubeVideos.map((video) => {
+            const videoData = videos.items.find((v) => v.id === video.video_id);
+            return {
+              ...videoData,
+              watchedAt: video.created_at,
+            };
+          });
+        }
+
+        // Get user-uploaded video details
+        let userVideoDetails = [];
+        if (userVideos.length) {
+          const userVideoIds = userVideos
+            .map((video) => video.video_id)
+            .join(",");
+          const userVideoResponse = await fetch(
+            `/api/videos?ids=${userVideoIds}`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+          if (!userVideoResponse.ok)
+            throw new Error("Failed to fetch user videos");
+          const userData = await userVideoResponse.json();
+          userVideoDetails = userVideos.map((video) => {
+            const videoData = userData.videos.find(
+              (v) => v.id === video.video_id
+            );
+            return {
+              ...videoData,
+              watchedAt: video.created_at,
+            };
+          });
+        }
+
+        // Combine and sort all videos
+        const combinedVideos = [
+          ...youtubeVideoDetails,
+          ...userVideoDetails,
+        ].sort((a, b) => new Date(b.watchedAt) - new Date(a.watchedAt));
+
+        return combinedVideos;
       } catch (error) {
         Sentry.captureException(error);
         console.error("Failed to fetch watch history", error);
@@ -297,24 +356,24 @@ export const useLikedVideos = () => {
         if (!data.likes?.length) return [];
 
         // Separate YouTube videos from user-uploaded videos
-        const youtubeVideos = data.likes.filter((like) => !like.is_user_video);
-        const userVideos = data.likes.filter((like) => like.is_user_video);
+        const youtubeVideos = data.likes.filter((video) => !video.is_user_video);
+        const userVideos = data.likes.filter((video) => video.is_user_video);
 
         // Get YouTube video details
         let youtubeVideoDetails = [];
         if (youtubeVideos.length) {
-          const videoIds = youtubeVideos.map((like) => like.video_id).join(",");
+          const videoIds = youtubeVideos.map((video) => video.video_id).join(",");
           const { data: videos } = await axiosInstance.get("/videos", {
             params: {
               part: "snippet,statistics,contentDetails",
               id: videoIds,
             },
           });
-          youtubeVideoDetails = youtubeVideos.map((like) => {
-            const videoData = videos.items.find((v) => v.id === like.video_id);
+          youtubeVideoDetails = youtubeVideos.map((video) => {
+            const videoData = videos.items.find((v) => v.id === video.video_id);
             return {
               ...videoData,
-              likedAt: like.created_at,
+              likedAt: video.created_at,
             };
           });
         }
@@ -323,7 +382,7 @@ export const useLikedVideos = () => {
         let userVideoDetails = [];
         if (userVideos.length) {
           const userVideoIds = userVideos
-            .map((like) => like.video_id)
+            .map((video) => video.video_id)
             .join(",");
           const userVideoResponse = await fetch(
             `/api/videos?ids=${userVideoIds}`,
@@ -337,13 +396,13 @@ export const useLikedVideos = () => {
           if (!userVideoResponse.ok)
             throw new Error("Failed to fetch user videos");
           const userData = await userVideoResponse.json();
-          userVideoDetails = userVideos.map((like) => {
+          userVideoDetails = userVideos.map((video) => {
             const videoData = userData.videos.find(
-              (v) => v.id === like.video_id
+              (v) => v.id === video.video_id
             );
             return {
               ...videoData,
-              likedAt: like.created_at,
+              likedAt: video.created_at,
             };
           });
         }
@@ -472,22 +531,22 @@ export const useIsVideoLiked = (videoId) => {
   });
 };
 
-// Watch Later
-export const useWatchLater = () => {
+// Saved Videos
+export const useSavedVideos = () => {
   const { isAuthenticated, token, user } = useUserStore();
 
   return useQuery({
-    queryKey: ["watchLater"],
+    queryKey: ["savedVideos"],
     queryFn: async () => {
       try {
         Sentry.addBreadcrumb({
-          category: "watch-later",
-          message: "Fetching watch later list",
+          category: "saved-videos",
+          message: "Fetching saved videos",
           level: "info",
         });
-        // First get watch later videos from database
+        // First get saved videos from database
         const response = await fetch(
-          `/api/watch-later?email=${encodeURIComponent(user.email)}`,
+          `/api/saved-videos?email=${encodeURIComponent(user.email)}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -496,16 +555,18 @@ export const useWatchLater = () => {
           }
         );
 
-        if (!response.ok) throw new Error("Failed to fetch watch later list");
+        if (!response.ok) throw new Error("Failed to fetch saved videos list");
         const data = await response.json();
 
-        if (!data.watchLater?.length) return [];
+        if (!data.savedVideos?.length) return [];
 
         // Separate YouTube videos from user-uploaded videos
-        const youtubeVideos = data.watchLater.filter(
+        const youtubeVideos = data.savedVideos.filter(
           (item) => !item.is_user_video
         );
-        const userVideos = data.watchLater.filter((item) => item.is_user_video);
+        const userVideos = data.savedVideos.filter(
+          (item) => item.is_user_video
+        );
 
         // Get YouTube video details
         let youtubeVideoDetails = [];
@@ -571,7 +632,7 @@ export const useWatchLater = () => {
   });
 };
 
-export const useWatchLaterMutation = () => {
+export const useSavedVideoMutation = () => {
   const queryClient = useQueryClient();
   const { user, token } = useUserStore();
 
@@ -583,12 +644,12 @@ export const useWatchLaterMutation = () => {
         }
 
         Sentry.addBreadcrumb({
-          category: "watch-later",
-          message: `${action} watch later`,
+          category: "saved-videos",
+          message: `${action} saved video`,
           level: "info",
         });
 
-        const response = await fetch("/api/watch-later", {
+        const response = await fetch("/api/saved-videos", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -602,7 +663,7 @@ export const useWatchLaterMutation = () => {
         });
 
         if (!response.ok) {
-          throw new Error("Failed to update watch later status");
+          throw new Error("Failed to update saved video status");
         }
 
         return response.json();
@@ -612,29 +673,29 @@ export const useWatchLaterMutation = () => {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(["watchLater"]);
-      queryClient.invalidateQueries(["watchLaterStatus"]);
+      queryClient.invalidateQueries(["savedVideos"]);
+      queryClient.invalidateQueries(["savedVideoStatus"]);
     },
     onError: handleApiError,
   });
 };
 
-export const useIsInWatchLater = (videoId) => {
+export const useIsInSavedVideos = (videoId) => {
   const { isAuthenticated, token, user } = useUserStore();
   const queryClient = useQueryClient();
 
   return useQuery({
-    queryKey: ["watchLaterStatus", videoId],
+    queryKey: ["savedVideoStatus", videoId],
     queryFn: async () => {
       try {
-        // First check if we have the data in the watchLater query cache
-        const watchLaterCache = queryClient.getQueryData(["watchLater"]);
-        
-        if (watchLaterCache) {
-          const isInWatchLater = watchLaterCache.some(
+        // First check if we have the data in the saved videos query cache
+        const savedVideosCache = queryClient.getQueryData(["savedVideos"]);
+
+        if (savedVideosCache) {
+          const isInSavedVideos = savedVideosCache.some(
             (video) => video.id === videoId
           );
-          return isInWatchLater;
+          return isInSavedVideos;
         }
 
         // If no cache, then fetch from API
@@ -645,7 +706,7 @@ export const useIsInWatchLater = (videoId) => {
         });
 
         const response = await fetch(
-          `/api/watch-later?videoId=${videoId}&email=${encodeURIComponent(
+          `/api/saved-videos?videoId=${videoId}&email=${encodeURIComponent(
             user.email
           )}`,
           {
@@ -655,12 +716,12 @@ export const useIsInWatchLater = (videoId) => {
             },
           }
         );
-        if (!response.ok) throw new Error("Failed to fetch watch later status");
+        if (!response.ok) throw new Error("Failed to fetch saved video status");
         const data = await response.json();
         return data.isInWatchLater ?? false;
       } catch (error) {
         Sentry.captureException(error);
-        console.error("Failed to fetch watch later status", error);
+        console.error("Failed to fetch saved video status", error);
         throw error;
       }
     },

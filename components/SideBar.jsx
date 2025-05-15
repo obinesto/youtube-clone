@@ -6,7 +6,6 @@ import {
   Home,
   TrendingUpIcon as Trending,
   ShoppingCartIcon as Subscriptions,
-  Library,
   History,
   PlayCircle,
   Bookmark,
@@ -40,10 +39,9 @@ const mainMenuItems = [
 ]
 
 const libraryItems = [
-  { icon: Library, text: "Library", link: "/library", requiresAuth: true },
   { icon: History, text: "History", link: "/history", requiresAuth: true },
   { icon: PlayCircle, text: "Your videos", link: "/your-videos", requiresAuth: true },
-  { icon: Bookmark, text: "Watch later", link: "/watch-later", requiresAuth: true },
+  { icon: Bookmark, text: "Saved videos", link: "/saved-videos", requiresAuth: true },
   { icon: ThumbsUp, text: "Liked videos", link: "/liked-videos", requiresAuth: true }
 ]
 

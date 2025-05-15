@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { useWatchLater } from "@/hooks/useQueries";
+import { useSavedVideos } from "@/hooks/useQueries";
 import VideoCard from "@/components/VideoCard";
 import useUserStore from "@/hooks/useStore";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
@@ -14,9 +14,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-export default function WatchLaterPage() {
+export default function SavedVideosPage() {
   const { isAuthenticated } = useUserStore();
-  const { data: videos, isLoading, error } = useWatchLater();
+  const { data: videos, isLoading, error } = useSavedVideos();
   const [sortBy, setSortBy] = useState("recent"); // recent, oldest, popular
 
   if (!isAuthenticated) return null;
@@ -28,7 +28,7 @@ export default function WatchLaterPage() {
   if (error) {
     return (
       <div className="flex flex-col pt-16">
-        <h1 className="text-3xl font-bold mb-6">Watch Later</h1>
+        <h1 className="text-3xl font-bold mb-6">Saved Videos</h1>
         <Alert variant="destructive" className="max-w-2xl mx-auto">
           <AlertTitle className="flex items-center justify-center gap-2">
             <AlertTriangle className="h-4 w-4" />
@@ -61,7 +61,7 @@ export default function WatchLaterPage() {
     <main className="container mx-auto px-4 pt-16">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-xl md:text-2xl font-bold text-customRed dark:text-customRed">
-          Watch Later
+          Saved Videos
         </h1>
         <Select value={sortBy} onValueChange={setSortBy}>
           <SelectTrigger className="w-[180px]">
@@ -77,7 +77,7 @@ export default function WatchLaterPage() {
 
       {!videos?.length ? (
         <div className="flex items-center justify-center min-h-[50vh]">
-          <p className="text-muted-foreground">No videos in watch later</p>
+          <p className="text-muted-foreground">No saved videos</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -91,6 +91,7 @@ export default function WatchLaterPage() {
               createdAt={video.snippet.publishedAt}
               views={video.statistics.viewCount}
               duration={video.contentDetails.duration}
+              savedAt={video.savedAt}
             />
           ))}
         </div>

@@ -32,6 +32,9 @@ const VideoCard = ({
   createdAt,
   views,
   duration,
+  watchedAt,
+  savedAt,
+  likedAt,
   isOwner,
 }) => {
   const queryClient = useQueryClient();
@@ -39,35 +42,20 @@ const VideoCard = ({
   const videoRef = useRef(null);
   const [isHovered, setIsHovered] = useState(false);
   const [updateLike, setUpdateLike] = useState(false);
-  const [updateWatchLater, setUpdateWatchLater] = useState(false);
+  const [updateSavedVideo, setUpdateSavedVideo] = useState(false);
 
   const {
     isLiked,
-    isInWatchLater,
+    isSaved,
     handleLike,
-    handleWatchLater,
+    handleSavedVideo,
     isLoadingLike,
-    isLoadingWatchLater,
+    isLoadingSavedVideo,
   } = useProtectedFeatures(videoId);
 
   const formattedDate = formatDate(createdAt);
   const formattedDuration = formatDuration(duration);
   const formattedViews = views ? parseInt(views).toLocaleString() : null;
-
-  // Handle mouse enter/leave for video preview
-  const handleMouseEnter = () => {
-    setIsHovered(true);
-    if (videoRef.current) {
-      videoRef.current.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&modestbranding=1&playsinline=1`;
-    }
-  };
-
-  const handleMouseLeave = () => {
-    setIsHovered(false);
-    if (videoRef.current) {
-      videoRef.current.src = "";
-    }
-  };
 
   // Prefetch video data when card comes into view
   useEffect(() => {
@@ -97,31 +85,48 @@ const VideoCard = ({
     };
   }, [videoId, queryClient]);
 
-  // Quietly update like and watch later button when clicked
+  // Effect to handle video playback on hover
+  useEffect(() => {
+    const iframeElement = videoRef.current; // Capture the element for this effect instance
+
+    if (isHovered && iframeElement) {
+      iframeElement.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&modestbranding=1&playsinline=1`;
+      
+      // Cleanup function to stop the video when hover ends or component unmounts
+      return () => {
+        if (iframeElement) {
+          iframeElement.src = "";
+        }
+      };
+    }
+  }, [isHovered, videoId]);
+
+  // Quietly update like and saved video button after clicking
   useEffect(() => {
     setUpdateLike(isLiked);
   }, [isLiked]);
 
   useEffect(() => {
-    setUpdateWatchLater(isInWatchLater);
-  }, [isInWatchLater]);
+    setUpdateSavedVideo(isSaved);
+  }, [isSaved]);
 
   return (
     <Link
       href={`/video/${videoId}`}
       id={`video-card-${videoId}`}
       className="block transition-transform hover:scale-[1.02] duration-200"
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
+      onMouseEnter= {() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
-      <Card className="h-[320px] overflow-hidden transition-shadow hover:shadow-lg relative">
+      <Card className="h-[345px] overflow-hidden transition-shadow hover:shadow-lg relative">
         <div className="relative aspect-video">
           {isHovered ? (
             <iframe
               ref={videoRef}
               className="w-full h-full absolute top-0 left-0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
+              title={`Video preview: ${title || 'Video'}`}
+               allowFullScreen
             />
           ) : (
             <img
@@ -173,25 +178,40 @@ const VideoCard = ({
             {formattedViews && <span>{formattedViews} views</span>}
             {formattedViews && formattedDate && <span>•</span>}
             {formattedDate && <span>{formattedDate}</span>}
-          </div>
+            </div>
+            {watchedAt && (
+              <span className="text-sm text-muted-foreground">
+                Watched {formatDate(watchedAt)}
+              </span>
+            )}
+            {savedAt && (
+              <span className="text-sm text-muted-foreground">
+                Saved {formatDate(savedAt)}
+              </span>
+            )}
+            {likedAt && (
+              <span className="text-sm text-muted-foreground">
+                Liked {formatDate(likedAt)}
+              </span>
+            )}
+          
           {/* Video actions */}
-          <div className="absolute bottom-0 right-0 flex items-center w-full justify-between ">
+          <div className="absolute bottom-0 right-0 flex items-center w-full justify-between">
             {isAuthenticated && (
               <>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="hover:text-customRed"
+                  className={`hover:text-customRed ${updateLike ? "text-customRed" : ""}`}
                   onClick={async (e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    setUpdateLike(!isLiked); // Optimistic update
+                    setUpdateLike(prev => !prev);
 
                     try {
                       await handleLike();
                     } catch (error) {
                       toast(error.message);
-                      setUpdateLike(isLiked); // Revert optimistic update
                     }
                   }}
                   disabled={isLoadingLike}
@@ -207,27 +227,26 @@ const VideoCard = ({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="hover:text-customRed"
+                 className={`hover:text-customRed ${updateSavedVideo? "text-customRed" : ""}`}
                   onClick={async (e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    setUpdateWatchLater(!isInWatchLater); // Optimistic update
-
+                    setUpdateSavedVideo(prev => !prev);
                     try {
-                      await handleWatchLater();
+                      await handleSavedVideo();
                     } catch (error) {
-                      console.error("Error updating watch later:", error);
-                      toast(error.message || "Failed to update watch later status.");
-                      setUpdateWatchLater(isInWatchLater); // Revert optimistic update
+                      console.error("Error updating saved video status:", error);
+                      toast(
+                        error.message || "Failed to update saved video status."
+                      );
                     }
                   }}
-                  disabled={isLoadingWatchLater}
+                  disabled={isLoadingSavedVideo}
                 >
-
-                  {isLoadingWatchLater ? null : (
+                  {isLoadingSavedVideo ? null : (
                     <Bookmark
                       className={`h-4 w-4 ${
-                        updateWatchLater ? "fill-customRed" : ""
+                        updateSavedVideo ? "fill-customRed" : ""
                       }`}
                     />
                   )}
@@ -236,7 +255,7 @@ const VideoCard = ({
                   variant="ghost"
                   size="icon"
                   className="hover:text-customRed"
-                  disabled={isLoadingWatchLater || isLoadingLike}
+                  disabled={isLoadingSavedVideo || isLoadingLike}
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -246,7 +265,7 @@ const VideoCard = ({
                     toast("Link copied to clipboard");
                   }}
                 >
-                  {isLoadingWatchLater || isLoadingLike ? null : (
+                  {isLoadingSavedVideo || isLoadingLike ? null : (
                     <Share2 className="h-4 w-4" />
                   )}
                 </Button>

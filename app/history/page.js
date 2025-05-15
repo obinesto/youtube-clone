@@ -12,7 +12,7 @@ export default function HistoryPage() {
   const { isAuthenticated } = useUserStore();
   const { data: watchHistory, isLoading } = useWatchHistory();
   const clearHistoryMutation = useClearHistory();
-
+  
   const handleClearHistory = async () => {
     try {
       await clearHistoryMutation.mutateAsync();
@@ -25,7 +25,7 @@ export default function HistoryPage() {
   if (isLoading) return <LoadingProtected />;
 
   return (
-    <div className="container mx-auto px-4 pt-16">
+    <div className="container mx-auto px-4 pt-20">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-xl md:text-2xl font-bold text-customRed dark:text-customRed">Watch History</h1>
         {watchHistory?.length > 0 && (
@@ -55,8 +55,18 @@ export default function HistoryPage() {
       ) : (
         <ScrollArea className="h-[calc(100vh-12rem)]">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {watchHistory.map((item) => (
-              <VideoCard key={item.video_id} id={item.video_id} watchedAt={item.watched_at} />
+            {watchHistory.map((video) => (
+              <VideoCard 
+              key={video.id}
+              videoId={video.id}
+              title={video.snippet.title}
+              thumbnail={video.snippet.thumbnails.high?.url}
+              channelTitle={video.snippet.channelTitle}
+              createdAt={video.snippet.publishedAt}
+              views={video.statistics.viewCount}
+              duration={video.contentDetails.duration}
+              watchedAt={video.watchedAt}
+              />
             ))}
           </div>
         </ScrollArea>

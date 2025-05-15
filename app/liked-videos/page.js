@@ -93,6 +93,7 @@ export default function LikedVideosPage() {
               createdAt={video.snippet.publishedAt}
               views={video.statistics.viewCount}
               duration={video.contentDetails.duration}
+              likedAt={video.likedAt}
             />
           ))}
         </div>
