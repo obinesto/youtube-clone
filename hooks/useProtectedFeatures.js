@@ -119,18 +119,6 @@ export function useProtectedFeatures(videoId) {
     [isAuthenticated, videoMutation, router]
   );
 
-  // const checkVideoStatus = useCallback(
-  //   (checkVideoId) => {
-  //     if (!isAuthenticated) return {};
-
-  //     return {
-  //       isLiked: likedVideos?.some((v) => v.video_id === checkVideoId),
-  //       isSaved: savedVideos?.some((v) => v.video_id === checkVideoId),
-  //       isOwned: userVideos?.some((v) => v.id === checkVideoId),
-  //     };
-  //   },
-  //   [isAuthenticated, likedVideos, savedVideos, userVideos]
-  // );
   return {
     // Data
     watchHistory,
@@ -148,7 +136,6 @@ export function useProtectedFeatures(videoId) {
     handleLike,
     handleSavedVideo,
     handleVideoAction,
-    // checkVideoStatus,
 
     // Like and Watch Later status
     isLiked: isLikedData ?? false,
