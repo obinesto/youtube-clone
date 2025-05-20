@@ -118,7 +118,7 @@ const VideoCard = ({
       onMouseEnter= {() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <Card className="h-[355px] md:h-[345px] overflow-hidden transition-shadow hover:shadow-lg relative">
+      <Card className="h-[370px] md:h-[345px] overflow-hidden transition-shadow hover:shadow-lg relative">
         <div className="relative aspect-video">
           {isHovered ? (
             <iframe
