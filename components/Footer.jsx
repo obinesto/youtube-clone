@@ -71,7 +71,7 @@ const Footer = () => {
         </Card>
 
         <Card className="flex flex-col items-center bg-transparent border-none shadow-none">
-          <CardHeader className="mb-8 md:mb-0">
+          <CardHeader>
             <CardTitle className="text-lg">Connect</CardTitle>
           </CardHeader>
           <CardContent className="flex px-16 gap-4">
