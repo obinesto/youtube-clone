@@ -138,3 +138,59 @@ export async function POST(request) {
       { status: 500 });
   }
 }
+
+export async function DELETE(request) {
+  try {
+    // Verify auth token
+    const decodedToken = await validateRequest(request);
+    if (!decodedToken) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const { email } = await request.json();
+    if (!email) {
+      return NextResponse.json(
+        { error: "Email is required" }, 
+        { status: 400 });
+    }
+
+    // Verify the email matches the token
+    if (email !== decodedToken.email) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 403 }
+      );
+    }
+
+    // First get the user_id
+    const { data: user, error: userError } = await supabase
+      .from("users")
+      .select("id")
+      .eq("email", email)
+      .single();
+
+    if (userError) {
+      throw userError;
+    }
+
+    // Then delete all watch history videos for that user
+    const { error: deleteError } = await supabase
+      .from("watch_history")
+      .delete()
+      .eq("user_id", user.id);
+
+    if (deleteError) {
+      throw deleteError;
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    return NextResponse.json(
+      { error: error.message },
+      { status: 500 }
+    );
+  }
+}

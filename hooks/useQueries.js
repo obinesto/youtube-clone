@@ -295,7 +295,7 @@ export const useClearHistory = () => {
   const { token, user } = useUserStore();
 
   return useMutation({
-    mutationFn: async (videoId) => {
+    mutationFn: async () => {
       try {
         Sentry.addBreadcrumb({
           category: "history",
@@ -310,7 +310,9 @@ export const useClearHistory = () => {
               Authorization: `Bearer ${token}`,
               "Content-Type": "application/json",
             },
-            body: JSON.stringify({ videoId }),
+            body: JSON.stringify({
+              email: user.email,
+            }),
           }
         );
         if (!response.ok) throw new Error("Failed to clear history");
