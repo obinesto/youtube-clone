@@ -6,7 +6,6 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import ModeToggle from "@/components/mode/ModeToggle";
 import { Providers } from "./providers";
 import { Toaster } from "@/components/ui/sonner";
-import Script from "next/script";
 import { Analytics } from "@vercel/analytics/react"
 import "./globals.css";
 

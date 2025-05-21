@@ -1,11 +1,23 @@
 "use client";
-import { useEffect, useState } from "react"
-import Link from "next/link"
-import { Search, Menu, Bell, User, LogOut, Settings, X, Upload, VideoIcon, Clock, ThumbsUp } from "lucide-react"
-import useUserStore from "@/hooks/useStore"
-import useUIStore from "@/hooks/useUIStore"
-import { useProtectedFeatures } from "@/hooks/useProtectedFeatures"
-import { 
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import {
+  Search,
+  Menu,
+  Bell,
+  User,
+  LogOut,
+  Settings,
+  X,
+  Upload,
+  VideoIcon,
+  Bookmark,
+  ThumbsUp,
+} from "lucide-react";
+import useUserStore from "@/hooks/useStore";
+import useUIStore from "@/hooks/useUIStore";
+import { useProtectedFeatures } from "@/hooks/useProtectedFeatures";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -13,49 +25,56 @@ import {
   DropdownMenuTrigger,
   DropdownMenuGroup,
   DropdownMenuLabel,
-} from "@/components/ui/dropdown-menu"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 
 const NavBar = () => {
-  const { user, logout } = useUserStore()
-  // console.log("user", user);
-  const { isSidebarOpen, toggleSidebar } = useUIStore()
-  const { watchHistory, likedVideos, watchLater, userVideos } = useProtectedFeatures();
-  const [isSearchOpen, setIsSearchOpen] = useState(false)
-  const [notifications, setNotifications] = useState([])
+  const { user, logout } = useUserStore();
+  const { isSidebarOpen, toggleSidebar } = useUIStore();
+  const { watchHistory, likedVideos, savedVideos, userVideos } =
+    useProtectedFeatures();
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
 
   // Update notifications when protected features change
   useEffect(() => {
     if (!user) return;
 
     const newNotifications = [];
-    if (watchLater?.length > 0) {
+    if (savedVideos?.length > 0) {
       newNotifications.push({
-        id: 'watch-later',
-        message: `${watchLater.length} videos in Watch Later`,
-        link: '/watch-later'
+        id: "saved-videos",
+        message: `${savedVideos.length} videos in Saved Videos`,
+        link: "/saved-videos",
       });
     }
     if (likedVideos?.length > 0) {
       newNotifications.push({
-        id: 'liked',
+        id: "liked",
         message: `${likedVideos.length} Liked videos`,
-        link: '/liked-videos'
+        link: "/liked-videos",
+      });
+    }
+    if (watchHistory?.length > 0) {
+      newNotifications.push({
+        id: "watch-history",
+        message: `${watchHistory.length} videos in Watch History`,
+        link: "/history",
       });
     }
     setNotifications(newNotifications);
-  }, [user, watchLater, likedVideos]);
+  }, [user, watchHistory, likedVideos, savedVideos]);
 
   return (
     <nav className="bg-customWhite dark:bg-customDark text-customDark dark:text-customWhite py-2 sm:py-4 px-4 sm:px-6 flex items-center justify-between fixed w-full top-0 z-50">
       <div className="flex items-center gap-2 sm:gap-4">
-        <Button 
-          variant="ghost" 
-          size="icon" 
+        <Button
+          variant="ghost"
+          size="icon"
           className="md:hidden"
           onClick={toggleSidebar}
         >
@@ -80,9 +99,9 @@ const NavBar = () => {
             placeholder="Search"
             className="w-full py-2 px-4 rounded-full bg-gray-100 dark:bg-gray-700 focus:ring-2 focus:ring-customRed"
           />
-          <Button 
-            variant="ghost" 
-            size="icon" 
+          <Button
+            variant="ghost"
+            size="icon"
             className="absolute right-2 top-1/2 transform -translate-y-1/2"
           >
             <Search className="h-4 w-4 text-gray-500 dark:text-gray-300" />
@@ -109,8 +128,8 @@ const NavBar = () => {
 
       <div className="flex items-center gap-2 sm:gap-4">
         {/* Mobile Search Button */}
-        <Button 
-          variant="ghost" 
+        <Button
+          variant="ghost"
           size="icon"
           className="sm:hidden"
           onClick={() => setIsSearchOpen(true)}
@@ -120,28 +139,18 @@ const NavBar = () => {
 
         {user && (
           <>
-            <Link href="/studio/upload">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="hidden sm:inline-flex"
-                aria-label="Upload video"
-              >
-                <Upload className="h-5 w-5" />
-              </Button>
-            </Link>
-
+            {/* Mobile Notification Bell */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
                   size="icon"
-                  className="hidden sm:inline-flex relative"
+                  className="sm:hidden relative" // Show only on mobile
                 >
                   <Bell className="h-5 w-5" />
                   {notifications.length > 0 && (
-                    <Badge 
-                      variant="destructive" 
+                    <Badge
+                      variant="destructive"
                       className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0"
                     >
                       {notifications.length}
@@ -156,13 +165,80 @@ const NavBar = () => {
                     No new notifications
                   </div>
                 ) : (
-                  notifications.map(notification => (
+                  notifications.map((notification) => (
                     <DropdownMenuItem key={notification.id} asChild>
-                      <Link href={notification.link} className="flex items-center gap-2">
-                        {notification.id === 'watch-later' ? (
-                          <Clock className="h-4 w-4" />
-                        ) : (
+                      <Link
+                        href={notification.link}
+                        className="flex items-center gap-2"
+                      >
+                        {notification.id === "saved-videos" ? (
+                          <Bookmark className="h-4 w-4" />
+                        ) : notification.id === "liked" ? (
                           <ThumbsUp className="h-4 w-4" />
+                        ) : notification.id === "watch-history" ? (
+                          <VideoIcon className="h-4 w-4" />
+                        ) : (
+                          <Bell className="h-4 w-4" /> // Fallback
+                        )}
+                        <span>{notification.message}</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  ))
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <Link href="/studio/upload">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="hidden sm:inline-flex"
+                aria-label="Upload video"
+              >
+                <Upload className="h-5 w-5" />
+              </Button>
+            </Link>
+
+            {/* Desktop Notification Bell */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="hidden sm:inline-flex relative"
+                >
+                  <Bell className="h-5 w-5" />
+                  {notifications.length > 0 && (
+                    <Badge
+                      variant="destructive"
+                      className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0"
+                    >
+                      {notifications.length}
+                    </Badge>
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-72">
+                <DropdownMenuLabel>Notifications</DropdownMenuLabel>
+                {notifications.length === 0 ? (
+                  <div className="p-4 text-center text-sm text-muted-foreground">
+                    No new notifications
+                  </div>
+                ) : (
+                  notifications.map((notification) => (
+                    <DropdownMenuItem key={notification.id} asChild>
+                      <Link
+                        href={notification.link}
+                        className="flex items-center gap-2"
+                      >
+                        {notification.id === "saved-videos" ? (
+                          <Bookmark className="h-4 w-4" />
+                        ) : notification.id === "liked" ? (
+                          <ThumbsUp className="h-4 w-4" />
+                        ) : notification.id === "watch-history" ? (
+                          <VideoIcon className="h-4 w-4" />
+                        ) : (
+                          <Bell className="h-4 w-4" /> // Fallback
                         )}
                         <span>{notification.message}</span>
                       </Link>
@@ -179,16 +255,26 @@ const NavBar = () => {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                 <Avatar>
-                  <AvatarImage src={user.photoURL || undefined} alt={user.email || "User"} />
-                  <AvatarFallback>{user.email?.[0]?.toUpperCase() || "U"}</AvatarFallback>
+                  <AvatarImage
+                    src={user.photoURL || undefined}
+                    alt={user.email || "User"}
+                  />
+                  <AvatarFallback>
+                    {user.email?.[0]?.toUpperCase() || "U"}
+                  </AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56" align="end" forceMount>
               <div className="flex items-center justify-start gap-2 p-2">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={user.photoURL || undefined} alt={user.email || "User"} />
-                  <AvatarFallback>{user.email?.[0]?.toUpperCase() || "U"}</AvatarFallback>
+                  <AvatarImage
+                    src={user.photoURL || undefined}
+                    alt={user.email || "User"}
+                  />
+                  <AvatarFallback>
+                    {user.email?.[0]?.toUpperCase() || "U"}
+                  </AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col space-y-1 leading-none">
                   {user.email && (
@@ -210,17 +296,25 @@ const NavBar = () => {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/watch-later" className="flex items-center">
-                    <Clock className="mr-2 h-4 w-4" />
-                    <span>Watch later</span>
-                    {watchLater?.length > 0 && (
+                  <Link href="/saved-videos" className="flex items-center">
+                    <Bookmark className="mr-2 h-4 w-4" />
+                    <span>Saved videos</span>
+                    {savedVideos?.length > 0 && (
                       <Badge variant="secondary" className="ml-auto">
-                        {watchLater.length}
+                        {savedVideos.length}
                       </Badge>
                     )}
                   </Link>
                 </DropdownMenuItem>
               </DropdownMenuGroup>
+              {/* Mobile Upload Link in User Dropdown */}
+              <DropdownMenuItem asChild className="sm:hidden">
+                <Link href="/studio/upload" className="flex items-center">
+                  <Upload className="mr-2 h-4 w-4" />
+                  <span>Upload video</span>
+                </Link>
+              </DropdownMenuItem>
+
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
                 <Link href="/settings">
@@ -236,8 +330,8 @@ const NavBar = () => {
           </DropdownMenu>
         ) : (
           <Link href="/auth">
-            <Button 
-              variant="default" 
+            <Button
+              variant="default"
               className="bg-customRed hover:bg-customRed/90 h-8 px-3 sm:px-4"
               size="sm"
             >
@@ -248,7 +342,7 @@ const NavBar = () => {
         )}
       </div>
     </nav>
-  )
-}
+  );
+};
 
-export default NavBar
+export default NavBar;
