@@ -56,6 +56,47 @@ export const useVideos = () => {
   });
 };
 
+export const useSearchVideos = (query) => {
+  return useQuery({
+    queryKey: ["searchVideos", query],
+    queryFn: async () => {
+      if (!query) throw new Error("Query is required");
+
+      try {
+        Sentry.addBreadcrumb({
+          category: "search",
+          message: "Searching videos",
+          level: "info",
+        });
+        const response = await axiosInstance.get("/search", {
+          params: {
+            part: "snippet",
+            type: "video",
+            maxResults: 50,
+            q: query,
+          },
+        });
+
+        if (!response.data?.items?.length) {
+          throw new Error("No videos found");
+        }
+
+        return response.data.items;
+      } catch (error) {
+        return handleApiError(error);
+      }
+    },
+    enabled: Boolean(query),
+    staleTime: STALE_TIME,
+    cacheTime: CACHE_TIME,
+    refetchOnWindowFocus: false,
+
+    retry: (failureCount, error) => {
+      return failureCount < 2 && !error.message.includes("quota exceeded");
+    },
+  });
+};
+
 export const useVideoDetails = (videoId) => {
   const queryClient = useQueryClient();
 
@@ -181,13 +222,19 @@ export const useWatchHistory = () => {
         const data = await response.json();
 
         // Separate YouTube videos from user-uploaded videos
-        const youtubeVideos = data.watchHistory.filter((history) => !history.is_user_video);
-        const userVideos = data.watchHistory.filter((history) => history.is_user_video);
+        const youtubeVideos = data.watchHistory.filter(
+          (history) => !history.is_user_video
+        );
+        const userVideos = data.watchHistory.filter(
+          (history) => history.is_user_video
+        );
 
         // Get YouTube video details
         let youtubeVideoDetails = [];
         if (youtubeVideos.length) {
-          const videoIds = youtubeVideos.map((video) => video.video_id).join(",");
+          const videoIds = youtubeVideos
+            .map((video) => video.video_id)
+            .join(",");
           const { data: videos } = await axiosInstance.get("/videos", {
             params: {
               part: "snippet,statistics,contentDetails",
@@ -358,13 +405,17 @@ export const useLikedVideos = () => {
         if (!data.likes?.length) return [];
 
         // Separate YouTube videos from user-uploaded videos
-        const youtubeVideos = data.likes.filter((video) => !video.is_user_video);
+        const youtubeVideos = data.likes.filter(
+          (video) => !video.is_user_video
+        );
         const userVideos = data.likes.filter((video) => video.is_user_video);
 
         // Get YouTube video details
         let youtubeVideoDetails = [];
         if (youtubeVideos.length) {
-          const videoIds = youtubeVideos.map((video) => video.video_id).join(",");
+          const videoIds = youtubeVideos
+            .map((video) => video.video_id)
+            .join(",");
           const { data: videos } = await axiosInstance.get("/videos", {
             params: {
               part: "snippet,statistics,contentDetails",

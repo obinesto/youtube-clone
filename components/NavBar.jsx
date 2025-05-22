@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import useUserStore from "@/hooks/useStore";
 import useUIStore from "@/hooks/useUIStore";
+import { useSearchVideos } from "@/hooks/useQueries";
 import { useProtectedFeatures } from "@/hooks/useProtectedFeatures";
 import {
   DropdownMenu,
@@ -31,10 +32,14 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const NavBar = () => {
   const { user, logout } = useUserStore();
   const { isSidebarOpen, toggleSidebar } = useUIStore();
+  const [query, setSearchQuery] = useState("");
+  const { data: searchVideos, isLoading } = useSearchVideos(query);
   const { watchHistory, likedVideos, savedVideos, userVideos } =
     useProtectedFeatures();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -69,6 +74,11 @@ const NavBar = () => {
     setNotifications(newNotifications);
   }, [user, watchHistory, likedVideos, savedVideos]);
 
+  // Handle search input changes
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+  };
+
   return (
     <nav className="bg-customWhite dark:bg-customDark text-customDark dark:text-customWhite py-2 sm:py-4 px-4 sm:px-6 flex items-center justify-between fixed w-full top-0 z-50">
       <div className="flex items-center gap-2 sm:gap-4">
@@ -97,6 +107,8 @@ const NavBar = () => {
           <Input
             type="text"
             placeholder="Search"
+            value={query}
+            onChange={handleSearchChange}
             className="w-full py-2 px-4 rounded-full bg-gray-100 dark:bg-gray-700 focus:ring-2 focus:ring-customRed"
           />
           <Button
@@ -109,23 +121,6 @@ const NavBar = () => {
         </div>
       </div>
 
-      {/* Mobile Search Dialog */}
-      <Dialog open={isSearchOpen} onOpenChange={setIsSearchOpen}>
-        <DialogContent className="sm:hidden p-0">
-          <div className="flex items-center p-4 gap-2">
-            <Input
-              type="text"
-              placeholder="Search"
-              className="flex-1"
-              autoFocus
-            />
-            <Button variant="ghost" size="icon">
-              <Search className="h-4 w-4" />
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
       <div className="flex items-center gap-2 sm:gap-4">
         {/* Mobile Search Button */}
         <Button
@@ -137,57 +132,32 @@ const NavBar = () => {
           <Search className="h-5 w-5" />
         </Button>
 
+        {/* Mobile Search Dialog */}
+        <Dialog open={isSearchOpen} onOpenChange={setIsSearchOpen}>
+          <DialogContent className="sm:hidden p-0 fixed w-full top-12 ">
+            <div className="flex items-center p-4 gap-2">
+              <Input
+                type="text"
+                placeholder="Search"
+                value={query}
+                onChange={handleSearchChange}
+                className="flex-1"
+                autoFocus
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsSearchOpen(false)}
+              >
+                <Search className="h-4 w-4" />
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
         {user && (
           <>
-            {/* Mobile Notification Bell */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="sm:hidden relative" // Show only on mobile
-                >
-                  <Bell className="h-5 w-5" />
-                  {notifications.length > 0 && (
-                    <Badge
-                      variant="destructive"
-                      className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0"
-                    >
-                      {notifications.length}
-                    </Badge>
-                  )}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-72">
-                <DropdownMenuLabel>Notifications</DropdownMenuLabel>
-                {notifications.length === 0 ? (
-                  <div className="p-4 text-center text-sm text-muted-foreground">
-                    No new notifications
-                  </div>
-                ) : (
-                  notifications.map((notification) => (
-                    <DropdownMenuItem key={notification.id} asChild>
-                      <Link
-                        href={notification.link}
-                        className="flex items-center gap-2"
-                      >
-                        {notification.id === "saved-videos" ? (
-                          <Bookmark className="h-4 w-4" />
-                        ) : notification.id === "liked" ? (
-                          <ThumbsUp className="h-4 w-4" />
-                        ) : notification.id === "watch-history" ? (
-                          <VideoIcon className="h-4 w-4" />
-                        ) : (
-                          <Bell className="h-4 w-4" /> // Fallback
-                        )}
-                        <span>{notification.message}</span>
-                      </Link>
-                    </DropdownMenuItem>
-                  ))
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-
+            {/* Desktop upload Button */}
             <Link href="/studio/upload">
               <Button
                 variant="ghost"
@@ -199,13 +169,13 @@ const NavBar = () => {
               </Button>
             </Link>
 
-            {/* Desktop Notification Bell */}
+            {/* Notification Bell */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="hidden sm:inline-flex relative"
+                  className="inline-flex relative"
                 >
                   <Bell className="h-5 w-5" />
                   {notifications.length > 0 && (
@@ -341,6 +311,46 @@ const NavBar = () => {
           </Link>
         )}
       </div>
+      {/* search results */}
+      {query && (
+        <div className="fixed top-16 left-0 right-0 md:left-64 z-[49] pointer-events-none">
+          <div className="max-w-3xl mx-auto px-2 sm:px-4 pointer-events-auto">
+            <Card className="p-4 max-h-80 overflow-y-auto overflow-x-hidden shadow-lg">
+              {isLoading ? (
+                <div>
+                  {/* Example Skeleton Loaders */}
+                  <Skeleton className="h-6 w-3/4 mb-3" />
+                  <Skeleton className="h-6 w-1/2 mb-3" />
+                  <Skeleton className="h-6 w-2/3 mb-3" />
+                </div>
+              ) : searchVideos && searchVideos.length > 0 ? (
+                <>
+                  <h1 className="text-xl md:text-2xl font-bold text-customRed dark:text-customRed mb-2">
+                    Search Results
+                  </h1>
+                  <ul className="space-y-1">
+                    {searchVideos.map((video) => (
+                      <li key={video.id.videoId}>
+                        <Link
+                          href={`/search?v=${video.id.videoId}`}
+                          className="block p-2 text-sm rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-customDark dark:text-customWhite"
+                          onClick={() => setSearchQuery("")} // clear search on click
+                        >
+                          {video.snippet.title}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  No results found for "{query}".
+                </p>
+              )}
+            </Card>
+          </div>
+        </div>
+      )}
     </nav>
   );
 };
