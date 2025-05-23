@@ -29,7 +29,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogPortal } from "@/components/ui/dialog";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
+import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -118,6 +120,16 @@ const NavBar = () => {
           >
             <Search className="h-4 w-4 text-gray-500 dark:text-gray-300" />
           </Button>
+          {query && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute right-8 top-1/2 transform -translate-y-1/2"
+              onClick={() => setSearchQuery("")}
+            >
+              <X className="h-4 w-4 text-gray-500 dark:text-gray-300" />
+            </Button>
+          )}
         </div>
       </div>
 
@@ -134,25 +146,34 @@ const NavBar = () => {
 
         {/* Mobile Search Dialog */}
         <Dialog open={isSearchOpen} onOpenChange={setIsSearchOpen}>
-          <DialogContent className="sm:hidden p-0 fixed w-full top-12 ">
-            <div className="flex items-center p-4 gap-2">
-              <Input
-                type="text"
-                placeholder="Search"
-                value={query}
-                onChange={handleSearchChange}
-                className="flex-1"
-                autoFocus
-              />
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsSearchOpen(false)}
+          <DialogPortal>
+            <DialogPrimitive.Content
+              className={cn(
+                "sm:hidden fixed w-full top-12 z-50 bg-background shadow-lg p-0",
+                "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+                "data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-top-[48%]"
+              )}
+            >
+              <div className="flex items-center p-4 ml-4">
+                <Input
+                  type="text"
+                  placeholder="Search"
+                  value={query}
+                  onChange={handleSearchChange}
+                  className="flex-1"
+                  autoFocus
+                />
+              </div>
+              <DialogPrimitive.Close
+                className={cn(
+                  "absolute right-4 top-1/2 -translate-y-1/2 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground"
+                )}
               >
-                <Search className="h-4 w-4" />
-              </Button>
-            </div>
-          </DialogContent>
+                <X className="h-5 w-5" />
+                <span className="sr-only">Close</span>
+              </DialogPrimitive.Close>
+            </DialogPrimitive.Content>
+          </DialogPortal>
         </Dialog>
 
         {user && (
@@ -313,9 +334,9 @@ const NavBar = () => {
       </div>
       {/* search results */}
       {query && (
-        <div className="fixed top-16 left-0 right-0 md:left-64 z-[49] pointer-events-none">
+        <div className="fixed top-16 left-0 right-0 md:left-12 z-[49] pointer-events-none">
           <div className="max-w-3xl mx-auto px-2 sm:px-4 pointer-events-auto">
-            <Card className="p-4 max-h-80 overflow-y-auto overflow-x-hidden shadow-lg">
+            <Card className="search-results p-4 max-h-80 overflow-y-auto overflow-x-hidden shadow-lg">
               {isLoading ? (
                 <div>
                   {/* Example Skeleton Loaders */}
@@ -330,9 +351,10 @@ const NavBar = () => {
                   </h1>
                   <ul className="space-y-1">
                     {searchVideos.map((video) => (
-                      <li key={video.id.videoId}>
+                      <li key={video.id.videoId} className="flex items-center">
+                        <Search className="h-4 w-4 mr-2"/>
                         <Link
-                          href={`/search?v=${video.id.videoId}`}
+                          href={`/search/${video.id.videoId}`}
                           className="block p-2 text-sm rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-customDark dark:text-customWhite"
                           onClick={() => setSearchQuery("")} // clear search on click
                         >

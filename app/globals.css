@@ -119,3 +119,8 @@
     @apply bg-background text-foreground;
   }
 }
+
+.search-results::-webkit-scrollbar{
+  display: none;
+  scrollbar-width: none;
+}

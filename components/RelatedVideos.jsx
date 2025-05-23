@@ -5,7 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import VideoCard from "./VideoCard";
 
 export default function RelatedVideos({ currentVideoId, videoTitle }) {
-  const { data: videos, isLoading, error } = useRelatedVideos(currentVideoId, videoTitle);
+  const { data: videos, isLoading } = useRelatedVideos(currentVideoId, videoTitle);
 
   if (isLoading) {
     return (
