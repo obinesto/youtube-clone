@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { formatDate, formatDuration } from "@/lib/utils/dateFormat";
 import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useVideoDetails } from "@/hooks/useQueries";
+import axiosInstance from "@/lib/axios";
 import {
   ThumbsUp,
   Bookmark,
@@ -65,7 +65,19 @@ const VideoCard = ({
           if (entry.isIntersecting) {
             queryClient.prefetchQuery({
               queryKey: ["video", videoId],
-              queryFn: () => useVideoDetails(videoId).queryFn(),
+              queryFn: async () => {
+                if (!videoId) throw new Error("Video ID is required for prefetch");
+                const response = await axiosInstance.get("/videos", {
+                  params: {
+                    part: "snippet,statistics,contentDetails",
+                    id: videoId,
+                  },
+                });
+                if (!response.data?.items?.length) {
+                  throw new Error("Video not found during prefetch");
+                }
+                return response.data.items[0];
+              },
             });
           }
         });

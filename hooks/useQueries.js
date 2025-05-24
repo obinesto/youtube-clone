@@ -44,7 +44,7 @@ export const useVideos = () => {
 
         return response.data.items;
       } catch (error) {
-        return handleApiError(error);
+        handleApiError(error);
       }
     },
     staleTime: STALE_TIME,
@@ -83,7 +83,7 @@ export const useSearchVideos = (query) => {
 
         return response.data.items;
       } catch (error) {
-        return handleApiError(error);
+        handleApiError(error);
       }
     },
     enabled: Boolean(query),
@@ -133,7 +133,7 @@ export const useVideoDetails = (videoId) => {
 
         return items[0];
       } catch (error) {
-        return handleApiError(error);
+        handleApiError(error);
       }
     },
     enabled: Boolean(videoId),
@@ -176,7 +176,7 @@ export const useRelatedVideos = (videoId, videoTitle, numberOfVideos) => {
           (item) => item.id.videoId !== videoId
         );
       } catch (error) {
-        return handleApiError(error);
+        handleApiError(error);
       }
     },
     enabled: Boolean(videoId && videoTitle),
@@ -468,7 +468,7 @@ export const useLikedVideos = () => {
 
         return combinedVideos;
       } catch (error) {
-        return handleApiError(error);
+        handleApiError(error);
       }
     },
     enabled: Boolean(isAuthenticated && token && user?.email),
@@ -517,9 +517,9 @@ export const useVideoLikeMutation = () => {
         throw error;
       }
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries(["likedVideos"]);
-      queryClient.invalidateQueries(["videoLike"]);
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["likedVideos"] });
+      queryClient.invalidateQueries({ queryKey: ["videoLikeStatus", variables.videoId] });
     },
     onError: handleApiError,
   });
@@ -674,7 +674,7 @@ export const useSavedVideos = () => {
           (a, b) => new Date(b.savedAt) - new Date(a.savedAt)
         );
       } catch (error) {
-        return handleApiError(error);
+        handleApiError(error);
       }
     },
     enabled: Boolean(isAuthenticated && token && user?.email),
@@ -725,9 +725,9 @@ export const useSavedVideoMutation = () => {
         throw error;
       }
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries(["savedVideos"]);
-      queryClient.invalidateQueries(["savedVideoStatus"]);
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["savedVideos"] });
+      queryClient.invalidateQueries({ queryKey: ["savedVideoStatus", variables.videoId] });
     },
     onError: handleApiError,
   });
@@ -812,7 +812,7 @@ export const useUserVideos = () => {
         const data = await response.json();
         return data.videos || [];
       } catch (error) {
-        return handleApiError(error);
+        handleApiError(error);
       }
     },
     enabled: Boolean(isAuthenticated && token),
@@ -888,7 +888,7 @@ export const useTrendingVideos = () => {
 
         return response.data.items;
       } catch (error) {
-        return handleApiError(error);
+        handleApiError(error);
       }
     },
     staleTime: STALE_TIME,
