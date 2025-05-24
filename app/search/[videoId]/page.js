@@ -23,7 +23,8 @@ function SearchPage({ params }) {
   const currentVideoId = video?.id.videoId || videoId;
   const { data: videos, isLoading: isLoadingRelated } = useRelatedVideos(
     currentVideoId,
-    videoTitle
+    videoTitle,
+    50
   );
 
   // combine both video and related videos into one array

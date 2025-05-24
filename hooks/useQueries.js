@@ -145,7 +145,7 @@ export const useVideoDetails = (videoId) => {
   });
 };
 
-export const useRelatedVideos = (videoId, videoTitle) => {
+export const useRelatedVideos = (videoId, videoTitle, numberOfVideos) => {
   return useQuery({
     queryKey: ["relatedVideos", videoId],
     queryFn: async () => {
@@ -163,7 +163,7 @@ export const useRelatedVideos = (videoId, videoTitle) => {
           params: {
             part: "snippet",
             type: "video",
-            maxResults: 10,
+            maxResults: numberOfVideos || 10,
             q: videoTitle,
           },
         });
