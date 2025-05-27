@@ -42,7 +42,9 @@ export default function SavedVideosPage() {
     );
   }
 
-  const sortedVideos = [...(videos || [])].sort((a, b) => {
+  const validVideos = (videos || []).filter((video) => video?.id);
+
+  const sortedVideos = [...validVideos].sort((a, b) => {
     switch (sortBy) {
       case "recent":
         return new Date(b.savedAt) - new Date(a.savedAt);
@@ -75,7 +77,7 @@ export default function SavedVideosPage() {
         </Select>
       </div>
 
-      {!videos?.length ? (
+      {!videos?.length && !isLoading ? (
         <div className="flex items-center justify-center min-h-[50vh]">
           <p className="text-muted-foreground">No saved videos</p>
         </div>

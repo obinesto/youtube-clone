@@ -54,18 +54,18 @@ export async function GET(request) {
 
     if (videoId) {
       // Check if specific video is in saved videos
-      const { data: watchLaterItem, error: watchLaterItemError } = await supabase
+      const { data: savedVideoItem, error: savedVideoItemError } = await supabase
         .from('saved_videos')
         .select('video_id')
         .eq('user_id', user.id)
         .eq('video_id', videoId)
         .single();
 
-      if (watchLaterItemError && watchLaterItemError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
-        throw watchLaterItemError;
+      if (savedVideoItemError && savedVideoItemError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+        throw savedVideoItemError;
       }
 
-      return NextResponse.json({ isInWatchLater: !!watchLaterItem });
+      return NextResponse.json({ isInSavedVideos: !!savedVideoItem });
     }
 
     // Get all saved videos

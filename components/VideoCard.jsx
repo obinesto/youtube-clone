@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import useUserStore from "@/hooks/useStore";
 import { useProtectedFeatures } from "@/hooks/useProtectedFeatures";
+import usePlayerStore from "@/hooks/usePlayerStore";
 
 const VideoCard = ({
   videoId,
@@ -39,8 +40,11 @@ const VideoCard = ({
 }) => {
   const queryClient = useQueryClient();
   const { isAuthenticated } = useUserStore();
+  const { activePlayerId, setActivePlayer, clearActivePlayer } =
+    usePlayerStore();
   const videoRef = useRef(null);
   const [isHovered, setIsHovered] = useState(false);
+  const [isSmallScreen, setIsSmallScreen] = useState(false);
   const [updateLike, setUpdateLike] = useState(false);
   const [updateSavedVideo, setUpdateSavedVideo] = useState(false);
 
@@ -57,8 +61,25 @@ const VideoCard = ({
   const formattedDuration = formatDuration(duration);
   const formattedViews = views ? parseInt(views).toLocaleString() : null;
 
-  // Prefetch video data when card comes into view
   useEffect(() => {
+    // Determine if it's a small screeen on mount and on window resize
+    const checkScreenSize = () => {
+      setIsSmallScreen(window.innerWidth < 768); // Breakpoint for "small screen"
+    };
+
+    if (typeof window !== "undefined") {
+      checkScreenSize();
+      window.addEventListener("resize", checkScreenSize);
+      return () => window.removeEventListener("resize", checkScreenSize);
+    }
+  }, []);
+
+  // Prefetch, cache video data and also handle pseudo-hover state for mobile autoplay
+  useEffect(() => {
+    if (!videoId) return;
+    const element = document.getElementById(`video-card-${videoId}`);
+    if (!element) return;
+
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -66,7 +87,8 @@ const VideoCard = ({
             queryClient.prefetchQuery({
               queryKey: ["video", videoId],
               queryFn: async () => {
-                if (!videoId) throw new Error("Video ID is required for prefetch");
+                if (!videoId)
+                  throw new Error("Video ID is required for prefetch");
                 const response = await axiosInstance.get("/videos", {
                   params: {
                     part: "snippet,statistics,contentDetails",
@@ -79,39 +101,81 @@ const VideoCard = ({
                 return response.data.items[0];
               },
             });
+            if (isSmallScreen) {
+              setIsHovered(true); // Set local hover state
+            }
+          } else {
+            if (isSmallScreen) {
+              setIsHovered(false); // Clear local hover state
+            }
           }
         });
       },
-      { rootMargin: "50px" }
+      {
+        rootMargin: "0px", // Trigger when element edge meets viewport edge
+        threshold: 0.1, // Trigger when 10% of the element is visible
+      }
     );
 
-    const element = document.getElementById(`video-card-${videoId}`);
-    if (element) {
-      observer.observe(element);
-    }
+    observer.observe(element);
 
     return () => {
       if (element) {
         observer.unobserve(element);
       }
+      // If it was a small screen and this effect is cleaning up (e.g. due to isSmallScreen changing)
+      // ensure isHovered is reset if it was set by this observer.
+      if (isSmallScreen) {
+        setIsHovered(false);
+      }
     };
-  }, [videoId, queryClient]);
+  }, [videoId, queryClient, isSmallScreen]);
 
-  // Effect to handle video playback on hover
+  // Effect to manage which video is the active player in the global store
   useEffect(() => {
-    const iframeElement = videoRef.current; // Capture the element for this effect instance
-
-    if (isHovered && iframeElement) {
-      iframeElement.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&modestbranding=1&playsinline=1`;
-      
-      // Cleanup function to stop the video when hover ends or component unmounts
-      return () => {
-        if (iframeElement) {
-          iframeElement.src = "";
-        }
-      };
+    if (isHovered) {
+      if (usePlayerStore.getState().activePlayerId === null) {
+        setActivePlayer(videoId);
+      }
+    } else {
+     // If this card is not hovered, and it was the active player, clear its active status.
+      if (usePlayerStore.getState().activePlayerId === videoId) {
+        clearActivePlayer(videoId);
+      }
     }
-  }, [isHovered, videoId]);
+}, [isHovered, videoId, setActivePlayer, clearActivePlayer]);
+
+    // Effect to handle cleanup when the component unmounts or its videoId prop changes.
+  useEffect(() => {
+    const currentVideoId = videoId;
+    return () => {
+      if (usePlayerStore.getState().activePlayerId === currentVideoId) {
+        clearActivePlayer(currentVideoId);
+      }
+    };
+  }, [videoId, clearActivePlayer]);
+
+  // Effect to handle actual video playback based on local hover state and global active player
+  useEffect(() => {
+    const iframeElement = videoRef.current;
+    if (!iframeElement) return;
+
+    // Play only if this card is locally hovered/intersected AND it's the globally active one
+    const canPlay = isHovered && activePlayerId === videoId;
+
+    if (canPlay) {
+      iframeElement.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&modestbranding=1&playsinline=1`;
+    } else {
+      iframeElement.src = ""; // Stop playback
+    }
+
+    // Cleanup function to stop the video if conditions change or component unmounts
+    return () => {
+      if (iframeElement) {
+        iframeElement.src = "";
+      }
+    };
+  }, [isHovered, videoId, activePlayerId]);
 
   // Quietly update like and saved video button after clicking
   useEffect(() => {
@@ -122,33 +186,35 @@ const VideoCard = ({
     setUpdateSavedVideo(isSaved);
   }, [isSaved]);
 
+  const shouldShowVideo = isHovered && activePlayerId === videoId;
+
   return (
     <Link
       href={`/video/${videoId}`}
       id={`video-card-${videoId}`}
       className="block transition-transform hover:scale-[1.02] duration-200"
-      onMouseEnter= {() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseEnter={!isSmallScreen ? () => setIsHovered(true) : undefined}
+      onMouseLeave={!isSmallScreen ? () => setIsHovered(false) : undefined}
     >
       <Card className="h-[375px] md:h-[345px] overflow-hidden transition-shadow hover:shadow-lg relative">
         <div className="relative aspect-video">
-          {isHovered ? (
+          {shouldShowVideo ? (
             <iframe
               ref={videoRef}
               className="w-full h-full absolute top-0 left-0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              title={`Video preview: ${title || 'Video'}`}
-               allowFullScreen
+              title={`Video preview: ${title || "Video"}`}
+              allowFullScreen
             />
           ) : (
             <img
               src={thumbnail || "/placeholder.svg"}
-              alt={title}
+              alt={title || "Video thumbnail"}
               className="object-cover w-full h-full"
               loading="lazy"
             />
           )}
-          {formattedDuration && !isHovered && (
+          {formattedDuration && !shouldShowVideo && (
             <div className="absolute bottom-2 right-2 px-1 py-0.5 bg-black/80 text-white text-xs rounded">
               {formattedDuration}
             </div>
@@ -160,18 +226,39 @@ const VideoCard = ({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="bg-black/80 hover:bg-black text-white"
+                  className="absolute top-1 right-1 bg-black/60 hover:bg-black/80 text-white p-1 h-auto w-auto rounded-full z-10"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }}
                 >
                   <MoreVertical className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem onClick={handleEdit}>
+              <DropdownMenuContent
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+              >
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    /* handleEdit logic */
+                    toast("Edit action triggered (implement me!)");
+                  }}
+                >
                   <Pencil className="h-4 w-4 mr-2" />
                   Edit
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  onClick={handleDelete}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    /* handleDelete logic */
+                    toast("Delete action triggered (implement me!)");
+                  }}
                   className="text-destructive"
                 >
                   <Trash2 className="h-4 w-4 mr-2" />
@@ -190,23 +277,23 @@ const VideoCard = ({
             {formattedViews && <span>{formattedViews} views</span>}
             {formattedViews && formattedDate && <span>•</span>}
             {formattedDate && <span>{formattedDate}</span>}
-            </div>
-            {watchedAt && (
-              <span className="text-sm text-muted-foreground">
-                Watched {formatDate(watchedAt)}
-              </span>
-            )}
-            {savedAt && (
-              <span className="text-sm text-muted-foreground">
-                Saved {formatDate(savedAt)}
-              </span>
-            )}
-            {likedAt && (
-              <span className="text-sm text-muted-foreground">
-                Liked {formatDate(likedAt)}
-              </span>
-            )}
-          
+          </div>
+          {watchedAt && (
+            <span className="text-sm text-muted-foreground">
+              Watched {formatDate(watchedAt)}
+            </span>
+          )}
+          {savedAt && (
+            <span className="text-sm text-muted-foreground">
+              Saved {formatDate(savedAt)}
+            </span>
+          )}
+          {likedAt && (
+            <span className="text-sm text-muted-foreground">
+              Liked {formatDate(likedAt)}
+            </span>
+          )}
+
           {/* Video actions */}
           <div className="absolute bottom-0 right-0 flex items-center w-full justify-between">
             {isAuthenticated && (
@@ -214,16 +301,19 @@ const VideoCard = ({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className={`hover:text-customRed ${updateLike ? "text-customRed" : ""}`}
+                  className={`hover:text-customRed ${
+                    updateLike ? "text-customRed" : ""
+                  }`}
                   onClick={async (e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    setUpdateLike(prev => !prev);
+                    setUpdateLike((prev) => !prev);
 
                     try {
                       await handleLike();
                     } catch (error) {
                       toast(error.message);
+                      setUpdateLike((prev) => !prev);
                     }
                   }}
                   disabled={isLoadingLike}
@@ -239,18 +329,24 @@ const VideoCard = ({
                 <Button
                   variant="ghost"
                   size="icon"
-                 className={`hover:text-customRed ${updateSavedVideo? "text-customRed" : ""}`}
+                  className={`hover:text-customRed ${
+                    updateSavedVideo ? "text-customRed" : ""
+                  }`}
                   onClick={async (e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    setUpdateSavedVideo(prev => !prev);
+                    setUpdateSavedVideo((prev) => !prev);
                     try {
                       await handleSavedVideo();
                     } catch (error) {
-                      console.error("Error updating saved video status:", error);
+                      console.error(
+                        "Error updating saved video status:",
+                        error
+                      );
                       toast(
                         error.message || "Failed to update saved video status."
                       );
+                      setUpdateSavedVideo((prev) => !prev);
                     }
                   }}
                   disabled={isLoadingSavedVideo}
@@ -272,7 +368,7 @@ const VideoCard = ({
                     e.preventDefault();
                     e.stopPropagation();
                     navigator.clipboard.writeText(
-                      `https://youtube-clone-cyprianobi.vercel.app/video/${videoId}`
+                      `${window.location.origin}/video/${videoId}`
                     );
                     toast("Link copied to clipboard");
                   }}

@@ -384,7 +384,7 @@ export const useLikedVideos = () => {
     queryFn: async () => {
       try {
         Sentry.addBreadcrumb({
-          category: "likes",
+          category: "liked-videos",
           message: "Fetching liked videos",
           level: "info",
         });
@@ -753,8 +753,8 @@ export const useIsInSavedVideos = (videoId) => {
 
         // If no cache, then fetch from API
         Sentry.addBreadcrumb({
-          category: "watch-later",
-          message: "Fetching watch later status",
+          category: "saved-video",
+          message: "Fetching saved video status",
           level: "info",
         });
 
@@ -771,7 +771,7 @@ export const useIsInSavedVideos = (videoId) => {
         );
         if (!response.ok) throw new Error("Failed to fetch saved video status");
         const data = await response.json();
-        return data.isInWatchLater ?? false;
+        return data.isInSavedVideos ?? false;
       } catch (error) {
         Sentry.captureException(error);
         console.error("Failed to fetch saved video status", error);

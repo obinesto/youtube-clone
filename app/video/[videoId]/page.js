@@ -144,7 +144,7 @@ export default function VideoPage({ params }) {
                     e.preventDefault();
                     e.stopPropagation();
                     navigator.clipboard.writeText(
-                      `https://youtube-clone-cyprianobi.vercel.app/video/${videoId}`
+                      `${window.location.origin}/video/${videoId}`
                     );
                     toast("Link copied to clipboard");
                   }}
