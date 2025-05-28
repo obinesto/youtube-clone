@@ -61,7 +61,7 @@ const VideoCard = ({
   const formattedDate = formatDate(createdAt);
   const formattedDuration = formatDuration(duration);
   const formattedViews = views ? parseInt(views).toLocaleString() : null;
-
+  
   useEffect(() => {
     // Determine if it's a small screeen on mount and on window resize
     const checkScreenSize = () => {

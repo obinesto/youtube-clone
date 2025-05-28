@@ -7,7 +7,6 @@ import { AlertTriangle } from "lucide-react";
 import { Card } from "@/components/ui/card";
 
 export default function Home() {
-
   const { data: videos, isLoading, isError } = useVideos();
 
   if (isError) {
@@ -33,7 +32,23 @@ export default function Home() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {isLoading
           ? Array.from({ length: 12 }).map((_, index) => (
-              <Skeleton key={index} className="h-[300px] w-full rounded-lg" />
+              <Card key={index} className="overflow-hidden">
+                {/* Thumbnail Skeleton */}
+                <div className="relative aspect-video">
+                  <Skeleton className="absolute inset-0" />
+                </div>
+                {/* Content Skeleton */}
+                <div className="p-4 space-y-2">
+                  <Skeleton className="h-5 w-full" />
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-4 w-2/4" />
+                  <div className="flex items-center justify-between gap-2">
+                    <Skeleton className="h-3 w-10 rounded-full" />
+                    <Skeleton className="h-3 w-10 rounded-full" />
+                    <Skeleton className="h-3 w-10 rounded-full" />
+                  </div>
+                </div>
+              </Card>
             ))
           : videos?.map((video) => (
               <VideoCard
