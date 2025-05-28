@@ -43,6 +43,7 @@ const VideoCard = ({
   const { activePlayerId, setActivePlayer, clearActivePlayer } =
     usePlayerStore();
   const videoRef = useRef(null);
+  const cardElementRef = useRef(null);
   const [isHovered, setIsHovered] = useState(false);
   const [isSmallScreen, setIsSmallScreen] = useState(false);
   const [updateLike, setUpdateLike] = useState(false);
@@ -74,7 +75,42 @@ const VideoCard = ({
     }
   }, []);
 
-  // Prefetch, cache video data and also handle pseudo-hover state for mobile autoplay
+  // Effect to set isHovered on small screens based on scroll position
+  useEffect(() => {
+    const element = cardElementRef.current;
+    if (!element) return;
+
+    const handleScroll = () => {
+      const rect = element.getBoundingClientRect();
+      const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+      const isWithinActivationZone = rect.top < viewportHeight * 0.4 && rect.bottom > 0 && rect.top < viewportHeight;
+
+      const isBelowViewport = rect.top < viewportHeight * 0.4; // Check if the element is below 40% of the viewport height
+      if (isSmallScreen) {
+         // Only update if the state needs to change
+        setIsHovered(currentIsHovered => {
+          if (isWithinActivationZone && !currentIsHovered) return true;
+          if (!isWithinActivationZone && currentIsHovered) return false;
+          return currentIsHovered;
+        });
+      } else {
+        setIsHovered(false);
+      }
+    };
+
+    if (typeof window !== "undefined") {
+      handleScroll();
+      window.addEventListener("scroll", handleScroll);
+      return () => {
+        window.removeEventListener("scroll", handleScroll);
+        // Ensure isHovered is false when cleaning up if it was set by this effect
+        if (isSmallScreen) setIsHovered(false);
+      };
+    }
+  }, [isSmallScreen, videoId]);
+
+
+  // Prefetch and cache video data
   useEffect(() => {
     if (!videoId) return;
     const element = document.getElementById(`video-card-${videoId}`);
@@ -101,19 +137,11 @@ const VideoCard = ({
                 return response.data.items[0];
               },
             });
-            if (isSmallScreen) {
-              setIsHovered(true); // Set local hover state
-            }
-          } else {
-            if (isSmallScreen) {
-              setIsHovered(false); // Clear local hover state
-            }
           }
         });
       },
       {
-        rootMargin: "0px", // Trigger when element edge meets viewport edge
-        threshold: 0.1, // Trigger when 10% of the element is visible
+        rootMargin: "50px", 
       }
     );
 
@@ -123,22 +151,14 @@ const VideoCard = ({
       if (element) {
         observer.unobserve(element);
       }
-      // If it was a small screen and this effect is cleaning up (e.g. due to isSmallScreen changing)
-      // ensure isHovered is reset if it was set by this observer.
-      if (isSmallScreen) {
-        setIsHovered(false);
-      }
     };
   }, [videoId, queryClient, isSmallScreen]);
 
   // Effect to manage which video is the active player in the global store
   useEffect(() => {
     if (isHovered) {
-      if (usePlayerStore.getState().activePlayerId === null) {
-        setActivePlayer(videoId);
-      }
+      setActivePlayer(videoId);
     } else {
-     // If this card is not hovered, and it was the active player, clear its active status.
       if (usePlayerStore.getState().activePlayerId === videoId) {
         clearActivePlayer(videoId);
       }
@@ -191,6 +211,7 @@ const VideoCard = ({
   return (
     <Link
       href={`/video/${videoId}`}
+      ref={cardElementRef}
       id={`video-card-${videoId}`}
       className="block transition-transform hover:scale-[1.02] duration-200"
       onMouseEnter={!isSmallScreen ? () => setIsHovered(true) : undefined}
