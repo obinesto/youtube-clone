@@ -519,7 +519,9 @@ export const useVideoLikeMutation = () => {
     },
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["likedVideos"] });
-      queryClient.invalidateQueries({ queryKey: ["videoLikeStatus", variables.videoId] });
+      queryClient.invalidateQueries({
+        queryKey: ["videoLikeStatus", variables.videoId],
+      });
     },
     onError: handleApiError,
   });
@@ -727,7 +729,9 @@ export const useSavedVideoMutation = () => {
     },
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["savedVideos"] });
-      queryClient.invalidateQueries({ queryKey: ["savedVideoStatus", variables.videoId] });
+      queryClient.invalidateQueries({
+        queryKey: ["savedVideoStatus", variables.videoId],
+      });
     },
     onError: handleApiError,
   });
@@ -897,5 +901,141 @@ export const useTrendingVideos = () => {
     retry: (failureCount, error) => {
       return failureCount < 2 && !error.message.includes("quota exceeded");
     },
+  });
+};
+
+// subscriptions
+export const useSubscriptions = () => {
+  const { isAuthenticated, token, user } = useUserStore();
+
+  return useQuery({
+    queryKey: ["subscriptions"],
+    queryFn: async () => {
+      try {
+        Sentry.addBreadcrumb({
+          category: "subscriptions",
+          message: "Fetching subscriptions",
+          level: "info",
+        });
+        const response = await fetch(
+          `/api/subscriptions?email=${encodeURIComponent(user.email)}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        if (!response.ok) throw new Error("Failed to fetch subscriptions");
+        const data = await response.json();
+        return data.subscriptions || [];
+      } catch (error) {
+        handleApiError(error);
+      }
+    },
+    enabled: Boolean(isAuthenticated && token && user?.email),
+    staleTime: STALE_TIME,
+    cacheTime: CACHE_TIME,
+    refetchOnWindowFocus: false,
+    retry: 1,
+  });
+};
+
+export const useSubscribeMutation = () => {
+  const queryClient = useQueryClient();
+  const { token, user } = useUserStore();
+
+  return useMutation({
+    mutationFn: async ({ channelId, action }) => {
+      try {
+        if (!user?.email) {
+          throw new Error("User email required");
+        }
+
+        Sentry.addBreadcrumb({
+          category: "subscriptions",
+          message: `${action} subscription`,
+          level: "info",
+        });
+
+        const response = await fetch("/api/subscriptions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            channelId,
+            action,
+            email: user.email,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to update subscription status");
+        }
+
+        return response.json();
+      } catch (error) {
+        Sentry.captureException(error);
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
+    },
+    onError: handleApiError,
+  });
+};
+
+export const useIsSubscribed = (channelId) => {
+  const { isAuthenticated, token, user } = useUserStore();
+  const queryClient = useQueryClient();
+
+  return useQuery({
+    queryKey: ["isSubscribed", channelId],
+    queryFn: async () => {
+      try {
+        // First check if we have the data in the subscriptions query cache
+        const subscriptionsCache = queryClient.getQueryData(["subscriptions"]);
+        if (subscriptionsCache) {
+          const channelSubscription = subscriptionsCache.find(
+            (sub) => sub.channel_id === channelId
+          );
+          if (channelSubscription) {
+            return channelSubscription.is_subscribed;
+          }
+        }
+
+        // If no cache, then fetch from API
+        Sentry.addBreadcrumb({
+          category: "subscriptions",
+          message: "Checking subscription status",
+          level: "info",
+        });
+        const response = await fetch(
+          `/api/subscriptions/${channelId}?email=${encodeURIComponent(
+            user.email
+          )}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        if (!response.ok)
+          throw new Error("Failed to check subscription status");
+        const data = await response.json();
+        return data.isSubscribed || false;
+      } catch (error) {
+        handleApiError(error);
+      }
+    },
+    enabled: Boolean(isAuthenticated && token && user?.email && channelId),
+    staleTime: STALE_TIME,
+    cacheTime: CACHE_TIME,
+    refetchOnWindowFocus: false,
+    retry: 1,
   });
 };

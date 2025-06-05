@@ -7,16 +7,19 @@ import {
   useLikedVideos,
   useSavedVideos,
   useUserVideos,
+  useSubscriptions,
   // Mutations
   useVideoLikeMutation,
   useSavedVideoMutation,
   useVideoMutation,
+  useSubscribeMutation,
   // Status Queries
   useIsVideoLiked,
   useIsInSavedVideos,
+  useIsSubscribed,
 } from "./useQueries";
 
-export function useProtectedFeatures(videoId) {
+export function useProtectedFeatures(videoId, channelId) {
   const router = useRouter();
   const { isAuthenticated, user, token } = useUserStore();
   const userEmail = user?.email;
@@ -27,17 +30,22 @@ export function useProtectedFeatures(videoId) {
   const { data: savedVideos, isLoading: isLoadingSavedVideos } =
     useSavedVideos();
   const { data: userVideos, isLoading: isLoadingUserVideos } = useUserVideos();
+  const { data: subscriptions, isLoading: isLoadingSubscriptions } =
+    useSubscriptions();
 
   // Mutations
   const likeMutation = useVideoLikeMutation();
   const savedVideoMutation = useSavedVideoMutation();
   const videoMutation = useVideoMutation();
+  const subscribeMutation = useSubscribeMutation();
 
   // Specific Status Queries
   const { data: isLikedData, isLoading: isLoadingLikeStatus } =
     useIsVideoLiked(videoId);
   const { data: isInSavedVideosData, isLoading: isLoadingSavedVideoStatus } =
     useIsInSavedVideos(videoId);
+  const { data: isSubscribedData, isLoading: isLoadingSubscriptionStatus } =
+    useIsSubscribed(channelId);
 
   // Action Handlers
   const handleLike = useCallback(async () => {
@@ -104,6 +112,38 @@ export function useProtectedFeatures(videoId) {
     token,
   ]);
 
+  const handleSubscribe = useCallback(async () => {
+    if (!isAuthenticated) {
+      router.push("/auth");
+      return;
+    }
+
+    if (!userEmail || !channelId) {
+      console.error("Missing required data for subscribe operation");
+      return;
+    }
+
+    try {
+      await subscribeMutation.mutateAsync({
+        channelId,
+        action: isSubscribedData ? "add" : "remove",
+        email: userEmail,
+        token,
+      });
+    } catch (error) {
+      console.error("Error subscribing/unsubscribing:", error);
+      throw new Error("Failed to update subscription status. Try again later.");
+    }
+  }, [
+    isAuthenticated,
+    channelId,
+    isSubscribedData,
+    subscribeMutation,
+    router,
+    userEmail,
+    token,
+  ]);
+
   const handleVideoAction = useCallback(
     async (type, actionVideoId, data) => {
       if (!isAuthenticated) {
@@ -125,23 +165,29 @@ export function useProtectedFeatures(videoId) {
     likedVideos,
     savedVideos,
     userVideos,
+    subscriptions,
 
     // Loading states
     isLoadingHistory,
     isLoadingLikes,
     isLoadingSavedVideos,
     isLoadingUserVideos,
+    isLoadingSubscriptions,
 
     // Action handlers
     handleLike,
     handleSavedVideo,
     handleVideoAction,
+    handleSubscribe,
 
     // Like and Watch Later status
     isLiked: isLikedData ?? false,
     isSaved: isInSavedVideosData ?? false,
+    isSubscribed: isSubscribedData ?? false,
     isLoadingLike: likeMutation.isLoading || isLoadingLikeStatus,
     isLoadingSavedVideo:
       savedVideoMutation.isLoading || isLoadingSavedVideoStatus,
+    isLoadingSubscriptions:
+      subscribeMutation.isLoading || isLoadingSubscriptionStatus,
   };
 }

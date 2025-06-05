@@ -83,9 +83,8 @@ const VideoCard = ({
     const handleScroll = () => {
       const rect = element.getBoundingClientRect();
       const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
-      const isWithinActivationZone = rect.top < viewportHeight * 0.4 && rect.bottom > 0 && rect.top < viewportHeight;
+      const isWithinActivationZone = rect.top < viewportHeight * 0.5 && rect.bottom > 0 && rect.top < viewportHeight;
 
-      const isBelowViewport = rect.top < viewportHeight * 0.4; // Check if the element is below 40% of the viewport height
       if (isSmallScreen) {
          // Only update if the state needs to change
         setIsHovered(currentIsHovered => {
@@ -210,7 +209,7 @@ const VideoCard = ({
 
   return (
     <Link
-      href={`/video/${videoId}`}
+      href={`/video/${videoId}/${channelTitle}`}
       ref={cardElementRef}
       id={`video-card-${videoId}`}
       className="block transition-transform hover:scale-[1.02] duration-200"

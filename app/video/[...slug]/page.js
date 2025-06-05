@@ -4,10 +4,18 @@ import VideoPlayer from "@/components/VideoPlayer";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner";
-import { useState, useEffect } from "react";
-import { use } from "react";
+import { useState, useEffect, use } from "react";
 import useUserStore from "@/hooks/useStore";
-import { ThumbsUp, Bookmark, Share2, ChevronUp, ChevronDown } from "lucide-react";
+import {
+  Bell,
+  ThumbsUp,
+  Bookmark,
+  Share2,
+  ChevronUp,
+  ChevronDown,
+  Home,
+  RefreshCcw,
+} from "lucide-react";
 import { useProtectedFeatures } from "@/hooks/useProtectedFeatures";
 import { formatViews, formatDate } from "@/lib/utils/dateFormat";
 import RelatedVideos from "@/components/RelatedVideos";
@@ -15,22 +23,36 @@ import RelatedVideos from "@/components/RelatedVideos";
 export default function VideoPage({ params }) {
   const { isAuthenticated } = useUserStore();
   const resolvedParams = use(params);
-  const { videoId } = resolvedParams;
+  console.log("Resolved Params:", resolvedParams);
+
+  const videoId =
+    resolvedParams.slug && resolvedParams.slug.length > 0
+      ? resolvedParams.slug[0]
+      : null;
+  const channelId =
+    resolvedParams.slug && resolvedParams.slug.length > 1
+      ? resolvedParams.slug[1]
+      : null;
+
   const {
     isLiked,
     isSaved,
+    isSubscribed,
     handleLike,
     handleSavedVideo,
+    handleSubscribe,
     isLoadingLike,
     isLoadingSavedVideo,
-  } = useProtectedFeatures(videoId);
+    isLoadingSubscriptions,
+  } = useProtectedFeatures(videoId, channelId);
 
   const [updateLike, setUpdateLike] = useState(false);
-   const [updateSavedVideo, setUpdateSavedVideo] = useState(false);
+  const [updateSavedVideo, setUpdateSavedVideo] = useState(false);
+  const [updateSubscription, setUpdateSubscription] = useState(false);
 
   const [viewDescription, setViewDescription] = useState(false);
 
-  // Quietly update like and saved video button after clicking
+  // Quietly update like, saved video, subscription button after clicking
   useEffect(() => {
     setUpdateLike(isLiked);
   }, [isLiked]);
@@ -39,25 +61,56 @@ export default function VideoPage({ params }) {
     setUpdateSavedVideo(isSaved);
   }, [isSaved]);
 
+  useEffect(() => {
+    setUpdateSubscription(isSubscribed);
+  }, [isSubscribed]);
+
   const {
     data: video,
     isError: isVideoError,
     error: videoError,
   } = useVideoDetails(videoId);
 
+  console.log("Video Data:", video);
+
   useEffect(() => {
     // Scroll to top when video ID changes
     window.scrollTo(0, 0);
   }, [videoId]);
 
-  if (isVideoError) {
+  if (isVideoError || !videoId || !channelId) {
     return (
-      <Alert variant="destructive" className="max-w-2xl mx-auto mt-16">
+      <Alert
+        variant="destructive"
+        className="max-w-2xl mx-auto mt-16 text-center"
+      >
         <AlertTitle>Error Loading Video</AlertTitle>
         <AlertDescription>
           {videoError?.message ||
             "Failed to load video. Please try again later."}
         </AlertDescription>
+        <div className="flex gap-16 mt-4 items-center justify-center">
+          <Button
+            onClick={() => {
+              window.location.reload();
+            }}
+            variant="default"
+            className="gap-2"
+          >
+            <RefreshCcw className="h-4 w-4" />
+            Refresh Page
+          </Button>
+          <Button
+            variant="default"
+            className="gap-2"
+            onClick={() => {
+              window.location.href = "/";
+            }}
+          >
+            <Home className="h-4 w-4" />
+            Return Home
+          </Button>
+        </div>
       </Alert>
     );
   }
@@ -84,11 +137,38 @@ export default function VideoPage({ params }) {
                     <Button
                       variant="ghost"
                       size="sm"
+                      className={updateSubscription ? "text-customRed" : ""}
+                      onClick={async (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setUpdateSubscription((prev) => !prev);
+                        try {
+                          await handleSubscribe();
+                        } catch (error) {
+                          toast(error.message);
+                        }
+                      }}
+                      disabled={isLoadingSubscriptions}
+                    >
+                      {isLoadingSubscriptions ? null : (
+                        <Bell
+                          className={`h-4 w-4 ${
+                            updateSubscription ? "fill-customRed" : ""
+                          }`}
+                        />
+                      )}
+                      <span className="ml-2">
+                        {updateSubscription ? "Unsubscribe" : "Subscribe"}
+                      </span>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       className={updateLike ? "text-customRed" : ""}
                       onClick={async (e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        setUpdateLike(prev => !prev);
+                        setUpdateLike((prev) => !prev);
                         try {
                           await handleLike();
                         } catch (error) {
@@ -115,7 +195,7 @@ export default function VideoPage({ params }) {
                       onClick={async (e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        setUpdateSavedVideo(prev => !prev);
+                        setUpdateSavedVideo((prev) => !prev);
                         try {
                           await handleSavedVideo();
                         } catch (error) {
@@ -136,23 +216,23 @@ export default function VideoPage({ params }) {
                       </span>
                     </Button>
                     <Button
-                  variant="ghost"
-                  size="icon"
-                  className="hover:text-customRed"
-                  disabled={isLoadingSavedVideo || isLoadingLike}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    navigator.clipboard.writeText(
-                      `${window.location.origin}/video/${videoId}`
-                    );
-                    toast("Link copied to clipboard");
-                  }}
-                >
-                  {isLoadingSavedVideo || isLoadingLike ? null : (
-                    <Share2 className="h-4 w-4" />
-                  )}
-                </Button>
+                      variant="ghost"
+                      size="icon"
+                      className="hover:text-customRed"
+                      disabled={isLoadingSavedVideo || isLoadingLike}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        navigator.clipboard.writeText(
+                          `${window.location.origin}/video/${videoId}`
+                        );
+                        toast("Link copied to clipboard");
+                      }}
+                    >
+                      {isLoadingSavedVideo || isLoadingLike ? null : (
+                        <Share2 className="h-4 w-4" />
+                      )}
+                    </Button>
                   </>
                 )}
               </div>
@@ -191,7 +271,10 @@ export default function VideoPage({ params }) {
         </div>
       </div>
       {/* Related Videos */}
-      <RelatedVideos currentVideoId={videoId} videoTitle={video?.snippet?.title} />
+      <RelatedVideos
+        currentVideoId={videoId}
+        videoTitle={video?.snippet?.title}
+      />
     </main>
   );
 }
