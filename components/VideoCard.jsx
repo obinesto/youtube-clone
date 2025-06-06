@@ -19,8 +19,8 @@ import {
   MoreVertical,
   Pencil,
   Trash2,
-  Share2,
 } from "lucide-react";
+import { PiShareFatBold } from "react-icons/pi";
 import useUserStore from "@/hooks/useStore";
 import { useProtectedFeatures } from "@/hooks/useProtectedFeatures";
 import usePlayerStore from "@/hooks/usePlayerStore";
@@ -61,7 +61,7 @@ const VideoCard = ({
   const formattedDate = formatDate(createdAt);
   const formattedDuration = formatDuration(duration);
   const formattedViews = views ? parseInt(views).toLocaleString() : null;
-  
+
   useEffect(() => {
     // Determine if it's a small screeen on mount and on window resize
     const checkScreenSize = () => {
@@ -82,12 +82,16 @@ const VideoCard = ({
 
     const handleScroll = () => {
       const rect = element.getBoundingClientRect();
-      const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
-      const isWithinActivationZone = rect.top < viewportHeight * 0.5 && rect.bottom > 0 && rect.top < viewportHeight;
+      const viewportHeight =
+        window.innerHeight || document.documentElement.clientHeight;
+      const isWithinActivationZone =
+        rect.top < viewportHeight * 0.5 &&
+        rect.bottom > 0 &&
+        rect.top < viewportHeight;
 
       if (isSmallScreen) {
-         // Only update if the state needs to change
-        setIsHovered(currentIsHovered => {
+        // Only update if the state needs to change
+        setIsHovered((currentIsHovered) => {
           if (isWithinActivationZone && !currentIsHovered) return true;
           if (!isWithinActivationZone && currentIsHovered) return false;
           return currentIsHovered;
@@ -107,7 +111,6 @@ const VideoCard = ({
       };
     }
   }, [isSmallScreen, videoId]);
-
 
   // Prefetch and cache video data
   useEffect(() => {
@@ -140,7 +143,7 @@ const VideoCard = ({
         });
       },
       {
-        rootMargin: "50px", 
+        rootMargin: "50px",
       }
     );
 
@@ -162,9 +165,9 @@ const VideoCard = ({
         clearActivePlayer(videoId);
       }
     }
-}, [isHovered, videoId, setActivePlayer, clearActivePlayer]);
+  }, [isHovered, videoId, setActivePlayer, clearActivePlayer]);
 
-    // Effect to handle cleanup when the component unmounts or its videoId prop changes.
+  // Effect to handle cleanup when the component unmounts or its videoId prop changes.
   useEffect(() => {
     const currentVideoId = videoId;
     return () => {
@@ -315,7 +318,13 @@ const VideoCard = ({
           )}
 
           {/* Video actions */}
-          <div className="absolute bottom-0 right-0 flex items-center w-full justify-between">
+          <div
+            className={
+              isAuthenticated
+                ? "absolute bottom-0 right-0 flex items-center w-full justify-between"
+                : "absolute bottom-0 right-6 flex items-center w-full justify-end"
+            }
+          >
             {isAuthenticated && (
               <>
                 <Button
@@ -394,8 +403,32 @@ const VideoCard = ({
                   }}
                 >
                   {isLoadingSavedVideo || isLoadingLike ? null : (
-                    <Share2 className="h-4 w-4" />
+                    <>
+                      <PiShareFatBold className="h-4 w-4" />
+                    </>
                   )}
+                </Button>
+              </>
+            )}
+            {!isAuthenticated && (
+              <>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="hover:text-customRed"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    navigator.clipboard.writeText(
+                      `${window.location.origin}/video/${videoId}`
+                    );
+                    toast("Link copied to clipboard");
+                  }}
+                >
+                  <Card className="flex items-center gap-2 py-1 px-2 rounded-full">
+                    <span>share</span>
+                    <PiShareFatBold className="h-4 w-4" />
+                  </Card>
                 </Button>
               </>
             )}
