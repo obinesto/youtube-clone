@@ -397,7 +397,7 @@ const VideoCard = ({
                     e.preventDefault();
                     e.stopPropagation();
                     navigator.clipboard.writeText(
-                      `${window.location.origin}/video/${videoId}`
+                      `${window.location.origin}/video/${videoId}/${channelTitle}`
                     );
                     toast("Link copied to clipboard");
                   }}
