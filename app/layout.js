@@ -20,11 +20,42 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Youtube Clone",
-  description: "A Youtube clone built with Next.js and Supabase",
-  image: "https://og-image.vercel.app/Youtube%20Clone.png",
+  title: "Youtube Clone - By Cyprian Obi",
+  description: "A web application that replicates the core features of YouTube.",
+  author: "Cyprian Obi",
   url: "https://youtube-clone-cyprianobi.vercel.app/",
-};
+  keywords: [
+    "YouTube Clone",
+    "Web Application",
+    "Video Sharing",
+    "Cyprian Obi",
+    "Next.js",
+    "React",
+    "Tailwind CSS",
+  ],
+  creator: "Cyprian Obi",
+  openGraph: {
+    type: "website",
+    title: "Youtube Clone - By Cyprian Obi",
+    description: "A web application that replicates the core features of YouTube.",
+    url: "https://youtube-clone-cyprianobi.vercel.app/",
+    images: [
+      {
+        url: "https://youtube-clone-cyprianobi.vercel.app/preview.png",
+        width: 1200,
+        height: 630,
+        alt: "Youtube Clone Preview Image",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Youtube Clone - By Cyprian Obi",
+    description: "A web application that replicates the core features of YouTube.",
+    creator: "@Mc_Cprian02",
+    images: ["https://youtube-clone-cyprianobi.vercel.app/preview.png"],
+   },
+  };
 
 export default function RootLayout({ children }) {
   return (

@@ -1,280 +1,89 @@
-"use client";
-import { useVideoDetails } from "@/hooks/useQueries";
-import VideoPlayer from "@/components/VideoPlayer";
-import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { toast } from "sonner";
-import { useState, useEffect, use } from "react";
-import useUserStore from "@/hooks/useStore";
-import {
-  Bell,
-  ThumbsUp,
-  Bookmark,
-  Share2,
-  ChevronUp,
-  ChevronDown,
-  Home,
-  RefreshCcw,
-} from "lucide-react";
-import { useProtectedFeatures } from "@/hooks/useProtectedFeatures";
-import { formatViews, formatDate } from "@/lib/utils/dateFormat";
-import RelatedVideos from "@/components/RelatedVideos";
+import { notFound } from 'next/navigation';
+import axiosInstance from "@/lib/axios";
+import VideoPageClient from '@/components/video-page-client';
 
-export default function VideoPage({ params }) {
-  const { isAuthenticated } = useUserStore();
-  const resolvedParams = use(params);
-  console.log("Resolved Params:", resolvedParams);
+// Function to fetch video data on the server
+async function getVideoData(videoId) {
+  if (!videoId) return null;
+  try {
+    const response = await axiosInstance.get("/videos", {
+      params: {
+        part: "snippet,statistics,contentDetails",
+        id: videoId,
+      },
+    });
 
-  const videoId =
-    resolvedParams.slug && resolvedParams.slug.length > 0
-      ? resolvedParams.slug[0]
-      : null;
-  const channelId =
-    resolvedParams.slug && resolvedParams.slug.length > 1
-      ? resolvedParams.slug[1]
-      : null;
+    if (!response.data?.items?.length) {
+      return null;
+    }
+    return response.data.items[0];
+  } catch (error) {
+    console.error("Error fetching video data on server:", error);
+    return null;
+  }
+}
 
-  const {
-    isLiked,
-    isSaved,
-    isSubscribed,
-    handleLike,
-    handleSavedVideo,
-    handleSubscribe,
-    isLoadingLike,
-    isLoadingSavedVideo,
-    isLoadingSubscriptions,
-  } = useProtectedFeatures(videoId, channelId);
+// Dynamically generate metadata
+export async function generateMetadata({ params }) {
+  const videoId = await params.slug && params.slug.length > 0 ? params.slug[0] : null;
+  const channelIdentifier = await params.slug && params.slug.length > 1 ? params.slug[1] : null;
 
-  const [updateLike, setUpdateLike] = useState(false);
-  const [updateSavedVideo, setUpdateSavedVideo] = useState(false);
-  const [updateSubscription, setUpdateSubscription] = useState(false);
-
-  const [viewDescription, setViewDescription] = useState(false);
-
-  // Quietly update like, saved video, subscription button after clicking
-  useEffect(() => {
-    setUpdateLike(isLiked);
-  }, [isLiked]);
-
-  useEffect(() => {
-    setUpdateSavedVideo(isSaved);
-  }, [isSaved]);
-
-  useEffect(() => {
-    setUpdateSubscription(isSubscribed);
-  }, [isSubscribed]);
-
-  const {
-    data: video,
-    isError: isVideoError,
-    error: videoError,
-  } = useVideoDetails(videoId);
-
-  console.log("Video Data:", video);
-
-  useEffect(() => {
-    // Scroll to top when video ID changes
-    window.scrollTo(0, 0);
-  }, [videoId]);
-
-  if (isVideoError || !videoId || !channelId) {
-    return (
-      <Alert
-        variant="destructive"
-        className="max-w-2xl mx-auto mt-16 text-center"
-      >
-        <AlertTitle>Error Loading Video</AlertTitle>
-        <AlertDescription>
-          {videoError?.message ||
-            "Failed to load video. Please try again later."}
-        </AlertDescription>
-        <div className="flex gap-16 mt-4 items-center justify-center">
-          <Button
-            onClick={() => {
-              window.location.reload();
-            }}
-            variant="default"
-            className="gap-2"
-          >
-            <RefreshCcw className="h-4 w-4" />
-            Refresh Page
-          </Button>
-          <Button
-            variant="default"
-            className="gap-2"
-            onClick={() => {
-              window.location.href = "/";
-            }}
-          >
-            <Home className="h-4 w-4" />
-            Return Home
-          </Button>
-        </div>
-      </Alert>
-    );
+  if (!videoId) {
+    return {
+      title: "Video Not Found",
+      description: "The requested video could not be found.",
+    };
   }
 
-  return (
-    <main className="flex min-h-screen flex-col pt-16">
-      <div className="flex-1 flex flex-col lg:flex-row gap-4 p-4">
-        <div className="flex-1">
-          <VideoPlayer videoId={videoId} />
-          {/* Video Details */}
-          <div className="py-4">
-            <h1 className="text-2xl font-semibold mb-2">
-              {video?.snippet?.title}
-            </h1>
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-              <div className="flex items-center gap-2">
-                <span className="font-medium">
-                  {video?.snippet?.channelTitle}
-                </span>
-              </div>
-              <div className="flex items-center gap-4">
-                {isAuthenticated && (
-                  <>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className={updateSubscription ? "text-customRed" : ""}
-                      onClick={async (e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setUpdateSubscription((prev) => !prev);
-                        try {
-                          await handleSubscribe();
-                        } catch (error) {
-                          toast(error.message);
-                        }
-                      }}
-                      disabled={isLoadingSubscriptions}
-                    >
-                      {isLoadingSubscriptions ? null : (
-                        <Bell
-                          className={`h-4 w-4 ${
-                            updateSubscription ? "fill-customRed" : ""
-                          }`}
-                        />
-                      )}
-                      <span className="ml-2">
-                        {updateSubscription ? "Unsubscribe" : "Subscribe"}
-                      </span>
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className={updateLike ? "text-customRed" : ""}
-                      onClick={async (e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setUpdateLike((prev) => !prev);
-                        try {
-                          await handleLike();
-                        } catch (error) {
-                          toast(error.message);
-                        }
-                      }}
-                      disabled={isLoadingLike}
-                    >
-                      {isLoadingLike ? null : (
-                        <ThumbsUp
-                          className={`h-4 w-4 ${
-                            updateLike ? "fill-customRed" : ""
-                          }`}
-                        />
-                      )}
-                      <span className="ml-2">
-                        {updateLike ? "Liked" : "Like"}
-                      </span>
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className={updateSavedVideo ? "text-customRed" : ""}
-                      onClick={async (e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setUpdateSavedVideo((prev) => !prev);
-                        try {
-                          await handleSavedVideo();
-                        } catch (error) {
-                          toast(error.message);
-                        }
-                      }}
-                      disabled={isLoadingSavedVideo}
-                    >
-                      {isLoadingSavedVideo ? null : (
-                        <Bookmark
-                          className={`h-4 w-4 ${
-                            updateSavedVideo ? "fill-customRed" : ""
-                          }`}
-                        />
-                      )}
-                      <span className="ml-2">
-                        {updateSavedVideo ? "Saved" : "Save Video"}
-                      </span>
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="hover:text-customRed"
-                      disabled={isLoadingSavedVideo || isLoadingLike}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        navigator.clipboard.writeText(
-                          `${window.location.origin}/video/${videoId}`
-                        );
-                        toast("Link copied to clipboard");
-                      }}
-                    >
-                      {isLoadingSavedVideo || isLoadingLike ? null : (
-                        <Share2 className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </>
-                )}
-              </div>
-            </div>
-            <div className="mt-4">
-              <p className="text-sm text-muted-foreground">
-                {formatViews(video?.statistics?.viewCount)} views •{" "}
-                {formatDate(video?.snippet?.publishedAt)}
-              </p>
-              <div className="mt-2"></div>
-              <Button
-                variant="ghost"
-                className="w-full flex items-center justify-center"
-                onClick={() => setViewDescription(!viewDescription)}
-              >
-                <div className="flex items-center gap-2">
-                  {viewDescription ? (
-                    <ChevronUp className="h-4 w-4" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4" />
-                  )}
-                  <span>
-                    {viewDescription ? "Description" : "View Description"}
-                  </span>
-                </div>
-              </Button>
-              {viewDescription && (
-                <div className="mt-2 p-4 bg-secondary rounded-md">
-                  <p className="text-sm whitespace-pre-wrap">
-                    {video?.snippet?.description || "No description available"}
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-      {/* Related Videos */}
-      <RelatedVideos
-        currentVideoId={videoId}
-        videoTitle={video?.snippet?.title}
-      />
-    </main>
-  );
+  const videoData = await getVideoData(videoId);
+
+  if (!videoData) {
+    return {
+      title: "Video Not Found",
+      description: "The requested video could not be found.",
+    };
+  }
+
+  const pageUrl = `https://youtube-clone-cyprianobi.vercel.app/video/${videoId}/${channelIdentifier || videoData.snippet.channelId}`;
+  const thumbnailUrl = videoData.snippet.thumbnails?.maxres?.url || videoData.snippet.thumbnails?.high?.url || videoData.snippet.thumbnails?.default?.url;
+
+  return {
+    title: videoData.snippet.title,
+    description: videoData.snippet.description.substring(0, 160),
+    creator: videoData.snippet.channelTitle || "Cyprian Obi",
+    keywords: [videoData.snippet.title, videoData.snippet.channelTitle, "video", "watch"],
+    url: pageUrl,
+    openGraph: {
+      type: "video.other",
+      title: videoData.snippet.title,
+      description: videoData.snippet.description.substring(0, 160),
+      url: pageUrl,
+      images: thumbnailUrl ? [{ url: thumbnailUrl, width: 1280, height: 720, alt: videoData.snippet.title }] : [],
+      videos: [{ url: pageUrl, secure_url: pageUrl, type: 'text/html', width: 1280, height: 720 }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: videoData.snippet.title,
+      description: videoData.snippet.description.substring(0, 160),
+      creator: "@Mc_Cprian02",
+      images: thumbnailUrl ? [thumbnailUrl] : [],
+    },
+  };
+}
+
+export default async function VideoPage({ params }) {
+  const videoId = params.slug && params.slug.length > 0 ? params.slug[0] : null;
+  const channelId = params.slug && params.slug.length > 1 ? params.slug[1] : null;
+
+  if (!videoId || !channelId) {
+    notFound();
+  }
+
+  const videoData = await getVideoData(videoId);
+
+  if (!videoData) {
+    notFound(); 
+  }
+
+  return <VideoPageClient videoId={videoId} channelId={channelId} initialVideoData={videoData} />;
 }
