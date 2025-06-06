@@ -239,7 +239,7 @@ export default function VideoPageClient({
                         e.preventDefault();
                         e.stopPropagation();
                         navigator.clipboard.writeText(
-                          `${window.location.origin}/video/${videoId}`
+                          `${window.location.origin}/video/${videoId}/${channelId}`
                         );
                         toast("Link copied to clipboard");
                       }}

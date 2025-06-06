@@ -24,7 +24,9 @@ async function getVideoData(videoId) {
 }
 
 // Dynamically generate metadata
-export async function generateMetadata({ params }) {
+export async function generateMetadata({ params: paramsPromise }) {
+  const params = await paramsPromise; 
+
   const videoId = params.slug && params.slug.length > 0 ? params.slug[0] : null;
   const channelIdentifier = params.slug && params.slug.length > 1 ? params.slug[1] : null;
 
@@ -99,8 +101,10 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function VideoPage({ params: paramsPromise }) {
-  const videoId = paramsPromise.slug && paramsPromise.slug.length > 0 ? paramsPromise.slug[0] : null;
-  const channelId = paramsPromise.slug && paramsPromise.slug.length > 1 ? paramsPromise.slug[1] : null;
+  const params = await paramsPromise; 
+
+  const videoId = params.slug && params.slug.length > 0 ? params.slug[0] : null;
+  const channelId = params.slug && params.slug.length > 1 ? params.slug[1] : null;
 
   if (!videoId || !channelId) {
     notFound();
