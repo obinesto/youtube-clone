@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Search,
   Menu,
@@ -46,6 +47,7 @@ const NavBar = () => {
     useProtectedFeatures();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
+  const router = useRouter();
 
   // Update notifications when protected features change
   useEffect(() => {
@@ -81,6 +83,21 @@ const NavBar = () => {
     setSearchQuery(e.target.value);
   };
 
+  // Handle search submission (Enter key or button click)
+  const handleSearchSubmit = () => {
+    if (!query.trim()) return;
+    setIsSearchOpen(false);
+    router.push(`/search/${query}`);
+    setSearchQuery("");
+  };
+
+  const handleKeyDown = (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      handleSearchSubmit();
+    }
+  };
+
   return (
     <nav className="bg-customWhite dark:bg-customDark text-customDark dark:text-customWhite py-2 sm:py-4 px-4 sm:px-6 flex items-center justify-between fixed w-full top-0 z-50">
       <div className="flex items-center gap-2 sm:gap-4">
@@ -111,12 +128,16 @@ const NavBar = () => {
             placeholder="Search"
             value={query}
             onChange={handleSearchChange}
+            onKeyDown={handleKeyDown}
             className="w-full py-2 px-4 rounded-full bg-gray-100 dark:bg-gray-700 focus:ring-2 focus:ring-customRed"
           />
           <Button
             variant="ghost"
             size="icon"
             className="absolute right-2 top-1/2 transform -translate-y-1/2"
+            onClick={handleSearchSubmit}
+            disabled={!query}
+            aria-label="Search"
           >
             <Search className="h-4 w-4 text-gray-500 dark:text-gray-300" />
           </Button>
@@ -133,8 +154,8 @@ const NavBar = () => {
         </div>
       </div>
 
+      {/* Mobile Search */}
       <div className="flex items-center gap-2 sm:gap-4">
-        {/* Mobile Search Button */}
         <Button
           variant="ghost"
           size="icon"
@@ -154,15 +175,26 @@ const NavBar = () => {
                 "data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-top-[48%]"
               )}
             >
-              <div className="flex items-center p-4 ml-4">
+              <div className="relative flex items-center p-4 ml-4">
                 <Input
                   type="text"
                   placeholder="Search"
                   value={query}
                   onChange={handleSearchChange}
+                  onKeyDown={handleKeyDown}
                   className="flex-1"
                   autoFocus
                 />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-8 top-1/2 transform -translate-y-1/2"
+                  onClick={handleSearchSubmit}
+                  disabled={!query}
+                  aria-label="Search"
+                >
+                  <Search className="h-5 w-5" />
+                </Button>
               </div>
               <DialogPrimitive.Close
                 className={cn(
@@ -170,7 +202,6 @@ const NavBar = () => {
                 )}
               >
                 <X className="h-5 w-5" />
-                <span className="sr-only">Close</span>
               </DialogPrimitive.Close>
             </DialogPrimitive.Content>
           </DialogPortal>
@@ -352,7 +383,7 @@ const NavBar = () => {
                   <ul className="space-y-1">
                     {searchVideos.map((video) => (
                       <li key={video.id.videoId} className="flex items-center">
-                        <Search className="h-4 w-4 mr-2"/>
+                        <Search className="h-4 w-4 mr-2" />
                         <Link
                           href={`/search/${video.id.videoId}`}
                           className="block p-2 text-sm rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-customDark dark:text-customWhite"

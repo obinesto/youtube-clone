@@ -8,7 +8,7 @@ const protectedRoutes = [
   "/studio",
   "/playlist",
   "/liked-videos",
-  "/watch-later",
+  "/saved-videos",
   "/subscriptions"
 ];
 

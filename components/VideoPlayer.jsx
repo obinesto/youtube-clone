@@ -174,7 +174,7 @@ const VideoPlayer = ({ videoId }) => {
   if (!isAPIReady) {
     return (
       <div className="relative bg-black rounded-lg overflow-hidden">
-        <div className="relative pt-[45%]">
+        <div className="relative pt-[55%] sm:pt-[40%]">
           <Skeleton className="absolute top-0 left-0 w-full h-full" />
         </div>
       </div>
@@ -189,7 +189,7 @@ const VideoPlayer = ({ videoId }) => {
       role="region"
       aria-label="Video player"
     >
-      <div className="relative pt-[45%]">
+      <div className="relative pt-[55%] sm:pt-[40%]">
         <div
           id={`player-${videoId}`}
           ref={playerRef}

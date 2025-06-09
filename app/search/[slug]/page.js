@@ -1,0 +1,95 @@
+"use client";
+import { use } from "react";
+import { useEffect } from "react";
+import VideoCard from "@/components/VideoCard";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Card } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertTriangle } from "lucide-react";
+import { useSearchVideos } from "@/hooks/useQueries";
+
+function SearchPage({ params }) {
+  const { slug } = use(params);
+  const searchQuery = decodeURIComponent(slug);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [slug]);
+
+  const {
+    data: videos,
+    isLoading,
+    isError,
+    error,
+  } = useSearchVideos(searchQuery);
+
+  if (isError) {
+    return (
+      <div className="p-4 mt-16">
+        <Alert variant="destructive">
+          <AlertDescription className="flex items-center justify-center gap-2">
+            <AlertTriangle className="h-4 w-4" />
+            <span>
+              {error?.message ||
+                "Error loading search results. Please try again later."}
+            </span>
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
+  return (
+    <main className="container mx-auto px-4 pt-16">
+      <Card className="p-4 border-hidden">
+        <h1 className="text-xl md:text-2xl font-bold text-customRed dark:text-customRed">
+          Search Results for:{" "}
+          <span className="text-customDark dark:text-customWhite font-medium sm:font-bold text-lg sm:text-xl">
+            {searchQuery}
+          </span>
+        </h1>
+      </Card>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {isLoading
+          ? Array.from({ length: 12 }).map((_, index) => (
+              <Card key={index} className="overflow-hidden">
+                {/* Thumbnail Skeleton */}
+                <div className="relative aspect-video">
+                  <Skeleton className="absolute inset-0" />
+                </div>
+                {/* Content Skeleton */}
+                <div className="p-4 space-y-2">
+                  <Skeleton className="h-5 w-full" />
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-4 w-2/4" />
+                  <div className="flex items-center justify-between gap-2">
+                    <Skeleton className="h-3 w-10 rounded-full" />
+                    <Skeleton className="h-3 w-10 rounded-full" />
+                    <Skeleton className="h-3 w-10 rounded-full" />
+                  </div>
+                </div>
+              </Card>
+            ))
+          : videos?.length > 0
+          ? videos.map((video) => (
+              <VideoCard
+                key={video.id.videoId}
+                videoId={video.id.videoId}
+                channelTitle={video.snippet.channelTitle}
+                title={video.snippet.title}
+                thumbnail={video.snippet.thumbnails.high.url}
+                createdAt={video.snippet.publishedAt}
+                views={video.statistics?.viewCount}
+                duration={video.contentDetails?.duration}
+              />
+            ))
+          : !isLoading && (
+              <div className="col-span-full text-center py-10">
+                <p>No videos found for &quot;{searchQuery}&quot;.</p>
+              </div>
+            )}
+      </div>
+    </main>
+  );
+}
+export default SearchPage;

@@ -78,7 +78,7 @@ export const useSearchVideos = (query) => {
         });
 
         if (!response.data?.items?.length) {
-          throw new Error("No videos found");
+          return [];
         }
 
         return response.data.items;

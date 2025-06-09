@@ -329,7 +329,7 @@ const VideoCard = ({
               <>
                 <Button
                   variant="ghost"
-                  size="icon"
+                  size="sm"
                   className={`hover:text-customRed ${
                     updateLike ? "text-customRed" : ""
                   }`}
@@ -357,7 +357,7 @@ const VideoCard = ({
                 </Button>
                 <Button
                   variant="ghost"
-                  size="icon"
+                  size="sm"
                   className={`hover:text-customRed ${
                     updateSavedVideo ? "text-customRed" : ""
                   }`}
@@ -390,7 +390,7 @@ const VideoCard = ({
                 </Button>
                 <Button
                   variant="ghost"
-                  size="icon"
+                  size="sm"
                   className="hover:text-customRed"
                   disabled={isLoadingSavedVideo || isLoadingLike}
                   onClick={(e) => {
@@ -414,7 +414,7 @@ const VideoCard = ({
               <>
                 <Button
                   variant="ghost"
-                  size="icon"
+                  size="sm"
                   className="hover:text-customRed"
                   onClick={(e) => {
                     e.preventDefault();

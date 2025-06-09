@@ -202,21 +202,43 @@ const useUserStore = create((set) => ({
 }));
 
 // auth state listener
-onAuthStateChanged(auth, async (user) => {
-  if (user) {
-    const token = await user.getIdToken();
-    useUserStore.setState({
-      user,
-      token,
-      loading: false,
-      isAuthenticated: true,
-    });
+onAuthStateChanged(auth, async (currentUser) => {
+  if (currentUser) {
+    try {
+      const token = await currentUser.getIdToken();
+      // If getIdToken() succeeds, Firebase has handled token refresh if needed.
+      // The token is valid.
+      useUserStore.setState({
+        user: currentUser, 
+        token,
+        loading: false,
+        isAuthenticated: true,
+        error: null,
+      });
+    } catch (error) {
+      // May happen if getIdToken() fails (e.g., network issue, token refresh fails, user disabled).
+      // This indicates the session is no longer valid.
+      console.error(
+        "onAuthStateChanged: Error getting ID token or user session invalid.",
+        error
+      );
+      await signOut(auth);
+      useUserStore.setState({
+        user: null,
+        token: null,
+        loading: false,
+        isAuthenticated: false,
+        error:
+          "Your session has expired or could not be refreshed. Please log in again.",
+      });
+    }
   } else {
     useUserStore.setState({
       user: null,
       token: null,
       loading: false,
       isAuthenticated: false,
+      error: null,
     });
   }
 });

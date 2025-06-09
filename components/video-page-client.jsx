@@ -128,7 +128,7 @@ export default function VideoPageClient({
                   {displayVideo?.snippet?.channelTitle}
                 </span>
               </div>
-              <div className="flex items-center gap-4">
+              <div className={`flex items-center ${isAuthenticated ? "justify-between" : ""}`}>
                 {isAuthenticated && (
                   <>
                     <Button
@@ -153,7 +153,7 @@ export default function VideoPageClient({
                           updateSubscription ? "fill-customRed" : ""
                         }`}
                       />
-                      <span className="ml-2">
+                      <span className="ml-1">
                         {updateSubscription ? "Unsubscribe" : "Subscribe"}
                       </span>
                     </Button>
@@ -179,7 +179,7 @@ export default function VideoPageClient({
                           updateLike ? "fill-customRed" : ""
                         }`}
                       />
-                      <span className="ml-2">
+                      <span className="ml-1">
                         {updateLike ? "Liked" : "Like"}
                       </span>
                     </Button>
@@ -205,35 +205,13 @@ export default function VideoPageClient({
                           updateSavedVideo ? "fill-customRed" : ""
                         }`}
                       />
-                      <span className="ml-2">
+                      <span className="ml-1">
                         {updateSavedVideo ? "Saved" : "Save Video"}
                       </span>
                     </Button>
                     <Button
                       variant="ghost"
-                      size="icon"
-                      className="hover:text-customRed flex-1"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        navigator.clipboard.writeText(
-                          `${window.location.origin}/video/${videoId}/${channelId}`
-                        );
-                        toast("Link copied to clipboard");
-                      }}
-                    >
-                      <Card className="flex items-center gap-2 py-1 px-2 ml-4 rounded-full">
-                        <PiShareFatBold className="h-4 w-4" />
-                        <span>share</span>
-                      </Card>
-                    </Button>
-                  </>
-                )}
-                {!isAuthenticated && (
-                  <>
-                    <Button
-                      variant="ghost"
-                      size="icon"
+                      size="sm"
                       className="hover:text-customRed"
                       onClick={(e) => {
                         e.preventDefault();
@@ -244,7 +222,29 @@ export default function VideoPageClient({
                         toast("Link copied to clipboard");
                       }}
                     >
-                      <Card className="flex items-center gap-2 py-1 px-2 ml-8 rounded-full">
+                      <Card className="flex items-center gap-2 py-1 px-2 rounded-full">
+                        <PiShareFatBold className="h-4 w-4" />
+                        <span>share</span>
+                      </Card>
+                    </Button>
+                  </>
+                )}
+                {!isAuthenticated && (
+                  <>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="hover:text-customRed"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        navigator.clipboard.writeText(
+                          `${window.location.origin}/video/${videoId}/${channelId}`
+                        );
+                        toast("Link copied to clipboard");
+                      }}
+                    >
+                      <Card className="flex items-center gap-2 py-1 px-2 rounded-full">
                         <PiShareFatBold className="h-4 w-4" />
                         <span>share</span>
                       </Card>
