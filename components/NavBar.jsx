@@ -385,9 +385,9 @@ const NavBar = () => {
                       <li key={video.id.videoId} className="flex items-center">
                         <Search className="h-4 w-4 mr-2" />
                         <Link
-                          href={`/search/${video.id.videoId}`}
+                          href={`/search/${video.snippet.title || query}`}
                           className="block p-2 text-sm rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-customDark dark:text-customWhite"
-                          onClick={() => setSearchQuery("")} // clear search on click
+                          onClick={() => setSearchQuery("")}
                         >
                           {video.snippet.title}
                         </Link>
