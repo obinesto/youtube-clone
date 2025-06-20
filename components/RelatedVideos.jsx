@@ -37,7 +37,7 @@ export default function RelatedVideos({ currentVideoId, videoTitle }) {
           {videos?.map((video) => (
             <VideoCard
               key={video.id.videoId}
-              id={video.id.videoId}
+              videoId={video.id.videoId}
               title={video.snippet.title}
               thumbnail={video.snippet.thumbnails.high?.url}
               channelTitle={video.snippet.channelTitle}

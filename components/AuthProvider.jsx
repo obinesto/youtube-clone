@@ -2,6 +2,7 @@
 import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import useUserStore from "@/hooks/useStore";
+import { ImSpinner } from "react-icons/im";
 
 // Routes that require authentication
 const protectedRoutes = [
@@ -9,7 +10,10 @@ const protectedRoutes = [
   "/playlist",
   "/liked-videos",
   "/saved-videos",
-  "/subscriptions"
+  "/subscriptions",
+  "/settings",
+  "/history",
+  "/your-videos",
 ];
 
 // Add routes that should redirect if already authenticated
@@ -23,21 +27,31 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     if (!loading) {
       // Handle protected routes
-      if (protectedRoutes.some(route => pathname.startsWith(route)) && !isAuthenticated) {
+      if (
+        protectedRoutes.some((route) => pathname.startsWith(route)) &&
+        !isAuthenticated
+      ) {
         router.push("/auth");
       }
-      
+
       // Handle auth routes (redirect if already authenticated)
-      if (authRoutes.some(route => pathname.startsWith(route)) && isAuthenticated) {
+      if (
+        authRoutes.some((route) => pathname.startsWith(route)) &&
+        isAuthenticated
+      ) {
         router.push("/");
       }
     }
   }, [isAuthenticated, loading, pathname, router]);
 
-  // if (loading) {
-  //   return null
-  // might create a stylish loading animation here later
-  // }
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen">
+        <ImSpinner className="animate-spin h-8 w-8" />
+        <span>Loading...</span>
+      </div>
+    );
+  }
 
   return children;
 }

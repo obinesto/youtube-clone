@@ -59,10 +59,6 @@ const SideBar = () => {
   const { isAuthenticated } = useUserStore()
 
   const handleNavigation = (item) => {
-    if (item.requiresAuth && !isAuthenticated) {
-      router.push('/auth')
-      return
-    }
     router.push(item.link)
   }
 
