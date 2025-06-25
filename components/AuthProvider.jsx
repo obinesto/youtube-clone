@@ -2,7 +2,6 @@
 import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import useUserStore from "@/hooks/useStore";
-import { ImSpinner } from "react-icons/im";
 
 // Routes that require authentication
 const protectedRoutes = [
@@ -45,13 +44,7 @@ export function AuthProvider({ children }) {
   }, [isAuthenticated, loading, pathname, router]);
 
   if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center h-screen">
-        <ImSpinner className="animate-spin h-8 w-8" />
-        <span>Loading...</span>
-      </div>
-    );
+    return null
   }
-
   return children;
 }

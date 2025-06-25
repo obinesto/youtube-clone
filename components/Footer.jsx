@@ -108,7 +108,7 @@ const Footer = () => {
 
       <div className="text-center text-sm text-muted-foreground">
         <p>
-          &copy; {new Date(Date.now()).getFullYear()} YouTube Clone . All rights
+          &copy; {new Date().getUTCFullYear()} YouTube Clone . All rights
           reserved.
         </p>
       </div>
