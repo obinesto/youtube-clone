@@ -41,7 +41,6 @@ export const useVideos = () => {
         if (!response.data?.items?.length) {
           throw new Error("No videos found");
         }
-
         return response.data.items;
       } catch (error) {
         handleApiError(error);
