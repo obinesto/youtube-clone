@@ -23,12 +23,18 @@ export default function Auth() {
     email: "",
     password: "",
     confirmPassword: "",
-    username: ""
+    username: "",
   });
   const [isSignUp, setIsSignUp] = useState(false);
   const [submitLoader, setSubmitLoader] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const { loginWithEmail, signUpWithEmail, loginWithGoogle, error, isAuthenticated } = useUserStore();
+  const {
+    loginWithEmail,
+    signUpWithEmail,
+    loginWithGoogle,
+    error,
+    isAuthenticated,
+  } = useUserStore();
   const router = useRouter();
 
   useEffect(() => {
@@ -77,7 +83,7 @@ export default function Auth() {
       } else {
         await loginWithEmail(formData.email, formData.password);
       }
-      
+
       if (!error) {
         router.push("/");
       }
@@ -101,13 +107,16 @@ export default function Auth() {
     } finally {
       setSubmitLoader(false);
     }
-  }
+  };
 
   return (
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4 pt-16 bg-background">
       <div className="w-full max-w-md">
         <div className="flex justify-center py-4">
-          <Link href="/" className="flex items-center gap-2 text-4xl font-semibold hover:text-gray-700">
+          <Link
+            href="/"
+            className="flex items-center gap-2 text-4xl font-semibold hover:text-gray-700"
+          >
             YouTube Clone
           </Link>
         </div>
@@ -230,8 +239,10 @@ export default function Auth() {
                     <Loader2 className="h-4 w-4 animate-spin" />
                     {isSignUp ? "Creating account..." : "Signing in..."}
                   </span>
+                ) : isSignUp ? (
+                  "Create Account"
                 ) : (
-                  isSignUp ? "Create Account" : "Sign In"
+                  "Sign In"
                 )}
               </Button>
 
@@ -269,7 +280,7 @@ export default function Auth() {
                   email: "",
                   password: "",
                   confirmPassword: "",
-                  username: ""
+                  username: "",
                 });
                 setErrorMessage("");
               }}

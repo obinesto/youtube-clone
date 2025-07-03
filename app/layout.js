@@ -6,7 +6,7 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import ModeToggle from "@/components/mode/ModeToggle";
 import { Providers } from "./providers";
 import { Toaster } from "@/components/ui/sonner";
-import { Analytics } from "@vercel/analytics/react"
+import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -21,7 +21,8 @@ const geistMono = Geist_Mono({
 
 export const metadata = {
   title: "Youtube Clone - By Cyprian Obi",
-  description: "A web application that replicates the core features of YouTube.",
+  description:
+    "A web application that replicates the core features of YouTube.",
   author: "Cyprian Obi",
   url: "https://youtube-clone-cyprianobi.vercel.app/",
   keywords: [
@@ -37,7 +38,8 @@ export const metadata = {
   openGraph: {
     type: "website",
     title: "Youtube Clone - By Cyprian Obi",
-    description: "A web application that replicates the core features of YouTube.",
+    description:
+      "A web application that replicates the core features of YouTube.",
     url: "https://youtube-clone-cyprianobi.vercel.app/",
     images: [
       {
@@ -51,15 +53,24 @@ export const metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Youtube Clone - By Cyprian Obi",
-    description: "A web application that replicates the core features of YouTube.",
+    description:
+      "A web application that replicates the core features of YouTube.",
     creator: "@Mc_Cprian02",
     images: ["https://youtube-clone-cyprianobi.vercel.app/preview.png"],
-   },
-  };
+  },
+};
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <link
+          rel="icon"
+          href="/icon?<generated>"
+          type="image/<generated>"
+          sizes="<generated>"
+        />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

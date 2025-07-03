@@ -128,7 +128,11 @@ export default function VideoPageClient({
                   {displayVideo?.snippet?.channelTitle}
                 </span>
               </div>
-              <div className={`flex items-center ${isAuthenticated ? "justify-between" : ""}`}>
+              <div
+                className={`flex items-center ${
+                  isAuthenticated ? "justify-between" : ""
+                }`}
+              >
                 {isAuthenticated && (
                   <>
                     <Button
