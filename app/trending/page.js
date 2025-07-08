@@ -13,9 +13,10 @@ export default function TrendingPage() {
     return (
       <div className="p-4 mt-16">
         <Alert variant="destructive">
-          <AlertDescription className="flex items-center justify-center gap-2">
+          <AlertDescription className="flex flex-col md:flex-row items-center justify-center gap-2">
             <AlertTriangle className="h-4 w-4" />
-            <span>Error loading trending videos. Please try again later.</span>
+            <span>Error loading trending videos.</span>
+            <span>Please try again later.</span>
           </AlertDescription>
         </Alert>
       </div>

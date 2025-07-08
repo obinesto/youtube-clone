@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import axiosInstance from "../lib/axios";
+import axios from "axios"
 import useUserStore from "./useStore";
 import * as Sentry from "@sentry/react";
 
@@ -26,22 +26,46 @@ export const useVideos = () => {
       try {
         Sentry.addBreadcrumb({
           category: "videos",
-          message: "Fetching videos",
+          message: "Fetching videos (step 1: search)",
           level: "info",
         });
-        const response = await axiosInstance.get("/search", {
+        // Step 1: Search for the latest videos to get their IDs
+        const searchResponse = await axios.get("api/youtube/search", {
           params: {
             part: "snippet",
             type: "video",
+            videoDuration: "medium",
             maxResults: 50,
             order: "date",
+            safeSearch: "moderate",
+            videoEmbeddable: true,
+            videoSyndicated: true,
           },
         });
 
-        if (!response.data?.items?.length) {
+        if (!searchResponse.data?.items?.length) {
+          console.log("latest videos:", searchResponse.data.items.length);
           throw new Error("No videos found");
         }
-        return response.data.items;
+
+        const videoIds = searchResponse.data.items
+          .map((item) => item.id.videoId)
+          .join(",");
+
+        Sentry.addBreadcrumb({
+          category: "videos",
+          message: "Fetching videos (step 2: details)",
+          level: "info",
+        });
+        // Step 2: Fetch full details for the found videos
+        const detailsResponse = await axios.get("/api/youtube/videos", {
+          params: {
+            part: "snippet,statistics,contentDetails",
+            id: videoIds,
+          },
+        });
+
+        return detailsResponse.data.items;
       } catch (error) {
         handleApiError(error);
       }
@@ -59,28 +83,49 @@ export const useSearchVideos = (query) => {
   return useQuery({
     queryKey: ["searchVideos", query],
     queryFn: async () => {
-      if (!query) throw new Error("Query is required");
+      if (!query) return []; // Return empty array if no query
 
       try {
         Sentry.addBreadcrumb({
           category: "search",
-          message: "Searching videos",
+          message: "Searching videos (step 1: search)",
           level: "info",
         });
-        const response = await axiosInstance.get("/search", {
+        // Step 1: Search for videos by query to get their IDs
+        const searchResponse = await axios.get("/api/youtube/search", {
           params: {
             part: "snippet",
             type: "video",
             maxResults: 50,
+            safeSearch: "moderate",
+            videoEmbeddable: true,
+            videoSyndicated: true,
             q: query,
           },
         });
 
-        if (!response.data?.items?.length) {
+        if (!searchResponse.data?.items?.length) {
           return [];
         }
 
-        return response.data.items;
+        const videoIds = searchResponse.data.items
+          .map((item) => item.id.videoId)
+          .join(",");
+
+        Sentry.addBreadcrumb({
+          category: "search",
+          message: "Searching videos (step 2: details)",
+          level: "info",
+        });
+        // Step 2: Fetch full details for the found videos
+        const detailsResponse = await axios.get("/api/youtube/videos", {
+          params: {
+            part: "snippet,statistics,contentDetails",
+            id: videoIds,
+          },
+        });
+
+        return detailsResponse.data.items;
       } catch (error) {
         handleApiError(error);
       }
@@ -110,7 +155,7 @@ export const useVideoDetails = (videoId) => {
           message: "Fetching video details",
           level: "info",
         });
-        const response = await axiosInstance.get("/videos", {
+        const response = await axios.get("/api/youtube/videos", {
           params: {
             part: "snippet,statistics,contentDetails",
             id: videoId,
@@ -158,10 +203,13 @@ export const useRelatedVideos = (videoId, videoTitle, numberOfVideos) => {
           message: "Fetching related videos",
           level: "info",
         });
-        const response = await axiosInstance.get("/search", {
+        const response = await axios.get("/api/youtube/search", {
           params: {
             part: "snippet",
             type: "video",
+            safeSearch: "moderate",
+            videoEmbeddable: true,
+            videoSyndicated: true,
             maxResults: numberOfVideos || 10,
             q: videoTitle,
           },
@@ -234,7 +282,7 @@ export const useWatchHistory = () => {
           const videoIds = youtubeVideos
             .map((video) => video.video_id)
             .join(",");
-          const { data: videos } = await axiosInstance.get("/videos", {
+          const { data: videos } = await axios.get("/api/youtube/videos", {
             params: {
               part: "snippet,statistics,contentDetails",
               id: videoIds,
@@ -415,7 +463,7 @@ export const useLikedVideos = () => {
           const videoIds = youtubeVideos
             .map((video) => video.video_id)
             .join(",");
-          const { data: videos } = await axiosInstance.get("/videos", {
+          const { data: videos } = await axios.get("/api/youtube/videos", {
             params: {
               part: "snippet,statistics,contentDetails",
               id: videoIds,
@@ -626,7 +674,7 @@ export const useSavedVideos = () => {
         let youtubeVideoDetails = [];
         if (youtubeVideos.length) {
           const videoIds = youtubeVideos.map((item) => item.video_id).join(",");
-          const { data: videos } = await axiosInstance.get("/videos", {
+          const { data: videos } = await axios.get("/api/youtube/videos", {
             params: {
               part: "snippet,statistics,contentDetails",
               id: videoIds,
@@ -877,7 +925,7 @@ export const useTrendingVideos = () => {
           message: "Fetching trending videos",
           level: "info",
         });
-        const response = await axiosInstance.get("/videos", {
+        const response = await axios.get("/api/youtube/videos", {
           params: {
             part: "snippet,statistics,contentDetails",
             chart: "mostPopular",

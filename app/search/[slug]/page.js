@@ -8,9 +8,9 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
 import { useSearchVideos } from "@/hooks/useQueries";
 
-function SearchPage({ params }) {
-  const { slug } = use(params);
-  const searchQuery = decodeURIComponent(slug);
+function SearchPage({ slug }) {
+  const { param } = use(slug);
+  const searchQuery = decodeURIComponent(param);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -73,8 +73,8 @@ function SearchPage({ params }) {
           : videos?.length > 0
           ? videos.map((video) => (
               <VideoCard
-                key={video.id.videoId}
-                videoId={video.id.videoId}
+                key={video.id}
+                videoId={video.id}
                 channelTitle={video.snippet.channelTitle}
                 title={video.snippet.title}
                 thumbnail={video.snippet.thumbnails.high.url}

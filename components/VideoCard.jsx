@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { formatDate, formatDuration } from "@/lib/utils/dateFormat";
 import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import axiosInstance from "@/lib/axios";
+import axios from "axios";
 import {
   ThumbsUp,
   Bookmark,
@@ -127,7 +127,7 @@ const VideoCard = ({
               queryFn: async () => {
                 if (!videoId)
                   throw new Error("Video ID is required for prefetch");
-                const response = await axiosInstance.get("/videos", {
+                const response = await axios.get("/api/youtube/videos", {
                   params: {
                     part: "snippet,statistics,contentDetails",
                     id: videoId,

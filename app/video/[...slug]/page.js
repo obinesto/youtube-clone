@@ -1,12 +1,18 @@
-import { notFound } from "next/navigation";
-import axiosInstance from "@/lib/axios";
+import axios from "axios";
 import VideoPageClient from "@/components/video-page-client";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertTriangle } from "lucide-react";
 
 // Function to fetch video data on the server
 async function getVideoData(videoId) {
   if (!videoId) return null;
   try {
-    const response = await axiosInstance.get("/videos", {
+    const baseUrl = process.env.NEXT_PUBLIC_VERCEL_URL
+      ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
+      : "http://localhost:3000";
+    const apiUrl = `${baseUrl}/api/youtube/videos`;
+
+    const response = await axios.get(apiUrl, {
       params: {
         part: "snippet,statistics,contentDetails",
         id: videoId,
@@ -25,10 +31,11 @@ async function getVideoData(videoId) {
 
 // Dynamically generate metadata
 export async function generateMetadata({ params: paramsPromise }) {
-  const params = await paramsPromise; 
+  const params = await paramsPromise;
 
   const videoId = params.slug && params.slug.length > 0 ? params.slug[0] : null;
-  const channelIdentifier = params.slug && params.slug.length > 1 ? params.slug[1] : null;
+  const channelIdentifier =
+    params.slug && params.slug.length > 1 ? params.slug[1] : null;
 
   if (!videoId) {
     return {
@@ -46,7 +53,10 @@ export async function generateMetadata({ params: paramsPromise }) {
     };
   }
 
-  const pageUrl = `https://youtube-clone-cyprianobi.vercel.app/video/${videoId}/${
+  const baseUrl = process.env.NEXT_PUBLIC_VERCEL_URL
+    ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
+    : "http://localhost:3000";
+  const pageUrl = `${baseUrl}/video/${videoId}/${
     channelIdentifier || videoData.snippet.channelId
   }`;
   const thumbnailUrl =
@@ -101,19 +111,40 @@ export async function generateMetadata({ params: paramsPromise }) {
 }
 
 export default async function VideoPage({ params: paramsPromise }) {
-  const params = await paramsPromise; 
+  const params = await paramsPromise;
 
   const videoId = params.slug && params.slug.length > 0 ? params.slug[0] : null;
-  const channelId = params.slug && params.slug.length > 1 ? params.slug[1] : null;
+  const channelId =
+    params.slug && params.slug.length > 1 ? params.slug[1] : null;
 
   if (!videoId || !channelId) {
-    notFound();
+    return (
+      <div className="p-4 mt-16">
+        <Alert variant="destructive">
+          <AlertDescription className="flex flex-col md:flex-row items-center justify-center gap-2">
+            <AlertTriangle className="h-4 w-4" />
+            <span>Error loading video from server.</span>
+            <span>Please try again later.</span>
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
   }
 
   const videoData = await getVideoData(videoId);
 
   if (!videoData) {
-    notFound();
+    return (
+      <div className="p-4 mt-16">
+        <Alert variant="destructive">
+          <AlertDescription className="flex flex-col md:flex-row items-center justify-center gap-2">
+            <AlertTriangle className="h-4 w-4" />
+            <span>Error loading video from server.</span>
+            <span>Please try again later.</span>
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
   }
 
   return (
