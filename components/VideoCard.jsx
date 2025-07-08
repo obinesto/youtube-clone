@@ -322,7 +322,7 @@ const VideoCard = ({
             className={
               isAuthenticated
                 ? "absolute bottom-0 right-0 flex items-center w-full justify-between"
-                : "absolute bottom-0 right-6 flex items-center w-full justify-end"
+                : "absolute bottom-0 right-0 flex items-center w-full justify-end"
             }
           >
             {isAuthenticated && (

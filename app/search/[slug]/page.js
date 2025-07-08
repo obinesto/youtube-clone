@@ -8,9 +8,9 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
 import { useSearchVideos } from "@/hooks/useQueries";
 
-function SearchPage({ slug }) {
-  const { param } = use(slug);
-  const searchQuery = decodeURIComponent(param);
+function SearchPage({ params }) {
+  const { slug } = use(params);
+  const searchQuery = decodeURIComponent(slug);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -25,7 +25,7 @@ function SearchPage({ slug }) {
 
   if (isError) {
     return (
-      <div className="p-4 mt-16">
+      <div className="p-4 mt-16 md:ml-5">
         <Alert variant="destructive">
           <AlertDescription className="flex items-center justify-center gap-2">
             <AlertTriangle className="h-4 w-4" />

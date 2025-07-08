@@ -11,7 +11,7 @@ export default function TrendingPage() {
 
   if (error) {
     return (
-      <div className="p-4 mt-16">
+      <div className="p-4 mt-16 md:ml-5">
         <Alert variant="destructive">
           <AlertDescription className="flex flex-col md:flex-row items-center justify-center gap-2">
             <AlertTriangle className="h-4 w-4" />
@@ -27,7 +27,7 @@ export default function TrendingPage() {
     <main className="container mx-auto px-4 pt-16">
       <Card className="p-4 border-hidden">
         <h1 className="text-xl md:text-2xl font-bold text-customRed dark:text-customRed">
-          Trending
+          Trending Videos
         </h1>
       </Card>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">

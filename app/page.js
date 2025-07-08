@@ -11,7 +11,7 @@ export default function Home() {
 
   if (isError) {
     return (
-      <div className="p-4 mt-16">
+      <div className="p-4 mt-16 md:ml-5">
         <Alert variant="destructive">
           <AlertDescription className="flex flex-col md:flex-row items-center justify-center gap-2">
             <AlertTriangle className="h-4 w-4" />

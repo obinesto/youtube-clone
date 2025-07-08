@@ -30,11 +30,10 @@ export const useVideos = () => {
           level: "info",
         });
         // Step 1: Search for the latest videos to get their IDs
-        const searchResponse = await axios.get("api/youtube/search", {
+        const searchResponse = await axios.get("/api/youtube/search", {
           params: {
             part: "snippet",
             type: "video",
-            videoDuration: "medium",
             maxResults: 50,
             order: "date",
             safeSearch: "moderate",
