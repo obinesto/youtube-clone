@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import axios from "axios"
+import axios from "axios";
 import useUserStore from "./useStore";
 import * as Sentry from "@sentry/react";
 
@@ -34,6 +34,8 @@ export const useVideos = () => {
           params: {
             part: "snippet",
             type: "video",
+            relevanceLanguage: "en",
+            videoDuration: "medium",
             maxResults: 50,
             order: "date",
             safeSearch: "moderate",

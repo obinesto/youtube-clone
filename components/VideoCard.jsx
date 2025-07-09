@@ -13,13 +13,7 @@ import { formatDate, formatDuration } from "@/lib/utils/dateFormat";
 import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import {
-  ThumbsUp,
-  Bookmark,
-  MoreVertical,
-  Pencil,
-  Trash2,
-} from "lucide-react";
+import { ThumbsUp, Bookmark, MoreVertical, Pencil, Trash2 } from "lucide-react";
 import { PiShareFatBold } from "react-icons/pi";
 import useUserStore from "@/hooks/useStore";
 import { useProtectedFeatures } from "@/hooks/useProtectedFeatures";
@@ -210,6 +204,11 @@ const VideoCard = ({
 
   const shouldShowVideo = isHovered && activePlayerId === videoId;
 
+  const channelTittleFormatter = () => {
+    const formattedChannelTittle = channelTitle.replaceAll(" ", "%20");
+    return formattedChannelTittle;
+  };
+
   return (
     <Link
       href={`/video/${videoId}/${channelTitle}`}
@@ -397,7 +396,7 @@ const VideoCard = ({
                     e.preventDefault();
                     e.stopPropagation();
                     navigator.clipboard.writeText(
-                      `${window.location.origin}/video/${videoId}/${channelTitle}`
+                      `${window.location.origin}/video/${videoId}/${channelTittleFormatter()}`
                     );
                     toast("Link copied to clipboard");
                   }}
@@ -420,7 +419,7 @@ const VideoCard = ({
                     e.preventDefault();
                     e.stopPropagation();
                     navigator.clipboard.writeText(
-                      `${window.location.origin}/video/${videoId}/${channelTitle}`
+                      `${window.location.origin}/video/${videoId}/${channelTittleFormatter()}`
                     );
                     toast("Link copied to clipboard");
                   }}
