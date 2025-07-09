@@ -35,7 +35,6 @@ export const useVideos = () => {
             part: "snippet",
             type: "video",
             relevanceLanguage: "en",
-            videoDuration: "medium",
             safeSearch: "moderate",
             maxResults: 50,
             order: "date",

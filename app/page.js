@@ -8,7 +8,6 @@ import { Card } from "@/components/ui/card";
 
 export default function Home() {
   const { data: videos, isLoading, isError, error } = useVideos();
-  console.log("Homepage videos:", videos);
 
   if (isError) {
     return (
