@@ -45,7 +45,7 @@ export const useVideos = () => {
         });
 
         if (!searchResponse.data?.items?.length) {
-          throw new Error("No videos found");
+          throw new Error("No latest videos found. Please try again later");
         }
 
         const videoIds = searchResponse.data.items

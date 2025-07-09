@@ -7,7 +7,7 @@ import { AlertTriangle } from "lucide-react";
 import { Card } from "@/components/ui/card";
 
 export default function Home() {
-  const { data: videos, isLoading, isError } = useVideos();
+  const { data: videos, isLoading, isError, error } = useVideos();
   console.log("Homepage videos:", videos);
 
   if (isError) {
@@ -16,8 +16,7 @@ export default function Home() {
         <Alert variant="destructive">
           <AlertDescription className="flex flex-col md:flex-row items-center justify-center gap-2">
             <AlertTriangle className="h-4 w-4" />
-            <span>No latest videos available to display.</span>
-            <span>Please try again later.</span>
+            <span>{error?.message}</span>
           </AlertDescription>
         </Alert>
       </div>
