@@ -36,16 +36,15 @@ export const useVideos = () => {
             type: "video",
             relevanceLanguage: "en",
             videoDuration: "medium",
+            safeSearch: "moderate",
             maxResults: 50,
             order: "date",
-            safeSearch: "moderate",
             videoEmbeddable: true,
             videoSyndicated: true,
           },
         });
 
         if (!searchResponse.data?.items?.length) {
-          console.log("latest videos:", searchResponse.data.items.length);
           throw new Error("No videos found");
         }
 
@@ -97,8 +96,10 @@ export const useSearchVideos = (query) => {
           params: {
             part: "snippet",
             type: "video",
-            maxResults: 50,
+            relevanceLanguage: "en",
             safeSearch: "moderate",
+            maxResults: 50,
+            order: "date",
             videoEmbeddable: true,
             videoSyndicated: true,
             q: query,
