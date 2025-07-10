@@ -100,34 +100,40 @@ export const useFeed = () => {
             if (seedVideos.length) {
               Sentry.addBreadcrumb({
                 category: "feed",
-                message: "Fetching personalized feed based on recent interactions",
+                message:
+                  "Fetching personalized feed based on recent interactions",
                 level: "info",
               });
 
               // Search for each seed video's related content
-              const searchPromises = seedVideos.map(video => 
-                axios.get("/api/youtube/search", {
-                  params: {
-                    part: "snippet",
-                    type: "video",
-                    q: video.snippet.title,
-                    maxResults: 50,
-                    order: "date",
-                    videoCategoryId: video.snippet.categoryId,
-                    relevanceLanguage: "en",
-                    safeSearch: "moderate",
-                    videoEmbeddable: true,
-                  },
-                }).catch(() => ({ data: { items: [] } })) // Handle individual search failures gracefully
+              const searchPromises = seedVideos.map(
+                (video) =>
+                  axios
+                    .get("/api/youtube/search", {
+                      params: {
+                        part: "snippet",
+                        type: "video",
+                        q: video.snippet.title,
+                        maxResults: 50,
+                        order: "date",
+                        videoCategoryId: video.snippet.categoryId,
+                        relevanceLanguage: "en",
+                        safeSearch: "moderate",
+                        videoEmbeddable: true,
+                      },
+                    })
+                    .catch(() => ({ data: { items: [] } })) // Handle individual search failures gracefully
               );
 
               const searchResults = await Promise.all(searchPromises);
-              
+
               // Combine all results and remove duplicates
-              const allSearchItems = searchResults.flatMap(result => result.data.items || []);
-              const uniqueVideoIds = [...new Set(
-                allSearchItems.map(item => item.id.videoId)
-              )].join(',');
+              const allSearchItems = searchResults.flatMap(
+                (result) => result.data.items || []
+              );
+              const uniqueVideoIds = [
+                ...new Set(allSearchItems.map((item) => item.id.videoId)),
+              ].join(",");
 
               if (uniqueVideoIds) {
                 Sentry.addBreadcrumb({
@@ -135,15 +141,27 @@ export const useFeed = () => {
                   message: "Fetching detailed video information",
                   level: "info",
                 });
-                
+
                 const detailsResponse = await axios.get("/api/youtube/videos", {
                   params: {
                     part: "snippet,statistics,contentDetails",
                     id: uniqueVideoIds,
                   },
                 });
+                // combine feed source for a more unique feed page
+                const combinedFeed = [
+                  ...(await fetchGuestFeed()),
+                  ...detailsResponse.data.items,
+                ]
+                  .sort(
+                    (a, b) => new Date(b.publishedAt) - new Date(a.publishedAt)
+                  )
+                  .splice(0, 50);
 
-                return detailsResponse.data.items;
+                // remove duplicate videos
+                return [
+                  ...new Set(combinedFeed.map((item) => item.id)),
+                ];
               }
             }
           }
