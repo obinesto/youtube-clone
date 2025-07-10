@@ -19,52 +19,137 @@ const handleApiError = (error) => {
   );
 };
 
-export const useVideos = () => {
+const fetchGuestFeed = async () => {
+  try {
+    Sentry.addBreadcrumb({
+      category: "feed",
+      message: "Fetching popular feed for guest/fallback",
+      level: "info",
+    });
+    const response = await axios.get("/api/youtube/videos", {
+      params: {
+        part: "snippet,statistics,contentDetails",
+        chart: "mostPopular",
+        maxResults: 50,
+      },
+    });
+
+    if (!response.data?.items?.length) {
+      throw new Error("No popular videos found.");
+    }
+    return response.data.items;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const useFeed = () => {
+  const { isAuthenticated, token, user } = useUserStore();
+
   return useQuery({
-    queryKey: ["videos"],
+    queryKey: ["feed", { isAuthenticated }],
     queryFn: async () => {
       try {
-        Sentry.addBreadcrumb({
-          category: "videos",
-          message: "Fetching videos (step 1: search)",
-          level: "info",
-        });
-        // Step 1: Search for the latest videos to get their IDs
-        const searchResponse = await axios.get("/api/youtube/search", {
-          params: {
-            part: "snippet",
-            type: "video",
-            relevanceLanguage: "en",
-            safeSearch: "moderate",
-            maxResults: 50,
-            order: "date",
-            videoEmbeddable: true,
-            videoSyndicated: true,
-          },
-        });
+        if (isAuthenticated && user?.email && token) {
+          // Fetch user's watch history and likes
+          const [historyResponse, likesResponse] = await Promise.all([
+            fetch(`/api/history?email=${encodeURIComponent(user.email)}`, {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            }).catch(() => null), // Prevent Promise.all from rejecting if one fails
+            fetch(`/api/likes?email=${encodeURIComponent(user.email)}`, {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            }).catch(() => null),
+          ]);
 
-        if (!searchResponse.data?.items?.length) {
-          throw new Error("No latest videos found. Please try again later");
+          const historyData = historyResponse?.ok
+            ? await historyResponse.json()
+            : null;
+          const likesData = likesResponse?.ok
+            ? await likesResponse.json()
+            : null;
+
+          // Combine, sort and get seed videoIds whose titles are going to be passed as query to search endpoint
+          const combinedInteractions = [
+            ...(historyData?.watchHistory || []),
+            ...(likesData?.likes || []),
+          ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+          // remove any duplicate videoIds, truncate and then join them
+          if (combinedInteractions.length) {
+            const seedVideoIds = [...new Set(combinedInteractions)];
+            let newSeedVideoIds = seedVideoIds.slice(0, 10);
+            newSeedVideoIds = newSeedVideoIds
+              .map((item) => item.video_id)
+              .join(",");
+            const { data: videos } = await axios.get("/api/youtube/videos", {
+              params: {
+                part: "snippet",
+                id: newSeedVideoIds,
+              },
+            });
+
+            // Get video titles to use as search seeds
+            const seedVideos = videos.items;
+
+            if (seedVideos.length) {
+              Sentry.addBreadcrumb({
+                category: "feed",
+                message: "Fetching personalized feed based on recent interactions",
+                level: "info",
+              });
+
+              // Search for each seed video's related content
+              const searchPromises = seedVideos.map(video => 
+                axios.get("/api/youtube/search", {
+                  params: {
+                    part: "snippet",
+                    type: "video",
+                    q: video.snippet.title,
+                    maxResults: 50,
+                    order: "date",
+                    videoCategoryId: video.snippet.categoryId,
+                    relevanceLanguage: "en",
+                    safeSearch: "moderate",
+                    videoEmbeddable: true,
+                  },
+                }).catch(() => ({ data: { items: [] } })) // Handle individual search failures gracefully
+              );
+
+              const searchResults = await Promise.all(searchPromises);
+              
+              // Combine all results and remove duplicates
+              const allSearchItems = searchResults.flatMap(result => result.data.items || []);
+              const uniqueVideoIds = [...new Set(
+                allSearchItems.map(item => item.id.videoId)
+              )].join(',');
+
+              if (uniqueVideoIds) {
+                Sentry.addBreadcrumb({
+                  category: "videos",
+                  message: "Fetching detailed video information",
+                  level: "info",
+                });
+                
+                const detailsResponse = await axios.get("/api/youtube/videos", {
+                  params: {
+                    part: "snippet,statistics,contentDetails",
+                    id: uniqueVideoIds,
+                  },
+                });
+
+                return detailsResponse.data.items;
+              }
+            }
+          }
         }
-
-        const videoIds = searchResponse.data.items
-          .map((item) => item.id.videoId)
-          .join(",");
-
-        Sentry.addBreadcrumb({
-          category: "videos",
-          message: "Fetching videos (step 2: details)",
-          level: "info",
-        });
-        // Step 2: Fetch full details for the found videos
-        const detailsResponse = await axios.get("/api/youtube/videos", {
-          params: {
-            part: "snippet,statistics,contentDetails",
-            id: videoIds,
-          },
-        });
-
-        return detailsResponse.data.items;
+        // Guest user logic (or fallback for authenticated users)
+        return await fetchGuestFeed();
       } catch (error) {
         handleApiError(error);
       }
@@ -97,7 +182,7 @@ export const useSearchVideos = (query) => {
             type: "video",
             relevanceLanguage: "en",
             safeSearch: "moderate",
-            maxResults: 50,
+            maxResults: 10,
             order: "date",
             videoEmbeddable: true,
             videoSyndicated: true,

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { headers } from "next/headers";
 
 // Helper function to make the API call and parse the JSON response
 async function fetchYouTubeAPI(url) {
@@ -8,10 +9,21 @@ async function fetchYouTubeAPI(url) {
 }
 
 export async function GET(request, { params }) {
-  const { resourceType } = params;
+  const { resourceType } = await params;
   const { searchParams } = new URL(request.url);
   const apiKey = process.env.YOUTUBE_API_KEY;
   const apiKey2 = process.env.YOUTUBE_API_KEY2;
+
+  // Vercel provides the user's country in this header. Fallback to US.
+  const country = await headers().get("x-vercel-ip-country") || "US";
+
+  // If fetching popular videos and no region is specified, use the user's country
+  if (
+    searchParams.get("chart") === "mostPopular" &&
+    !searchParams.has("regionCode")
+  ) {
+    searchParams.set("regionCode", country);
+  }
 
   searchParams.set("key", apiKey);
   let url = `https://www.googleapis.com/youtube/v3/${resourceType}?${searchParams.toString()}`;
@@ -38,7 +50,7 @@ export async function GET(request, { params }) {
       console.error("YouTube API error:", data);
       return NextResponse.json(
         {
-          error:
+          message:
             data.error?.message || "An unknown YouTube API error occurred.",
         },
         { status: response.status }
@@ -49,7 +61,7 @@ export async function GET(request, { params }) {
   } catch (error) {
     console.error("Server error:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { message: "Internal server error" },
       { status: 500 }
     );
   }
