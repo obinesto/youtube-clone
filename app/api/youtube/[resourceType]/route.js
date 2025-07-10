@@ -13,6 +13,7 @@ export async function GET(request, { params }) {
   const { searchParams } = new URL(request.url);
   const apiKey = process.env.YOUTUBE_API_KEY;
   const apiKey2 = process.env.YOUTUBE_API_KEY2;
+  const apiKey3 = process.env.YOUTUBE_API_KEY3;
 
   // Vercel provides the user's country in this header. Fallback to US.
   const country = headers().get("x-vercel-ip-country") || "US";
@@ -39,11 +40,26 @@ export async function GET(request, { params }) {
       console.log("API key 1 quota exceeded, trying API key 2...");
 
       searchParams.set("key", apiKey2);
-      const fallbackUrl = `https://www.googleapis.com/youtube/v3/${resourceType}?${searchParams.toString()}`;
+      const fallbackUrlOne = `https://www.googleapis.com/youtube/v3/${resourceType}?${searchParams.toString()}`;
 
-      const fallbackResult = await fetchYouTubeAPI(fallbackUrl);
-      response = fallbackResult.response;
-      data = fallbackResult.data;
+      const fallbackResultOne = await fetchYouTubeAPI(fallbackUrlOne);
+      response = fallbackResultOne.response;
+      data = fallbackResultOne.data;
+
+      if (
+        !response.ok &&
+        response.status === 403 &&
+        data?.error?.message?.includes("quota")
+      ) {
+        console.log("API key 2 quota exceeded, trying API key 3...");
+
+        searchParams.set("key", apiKey3);
+        const fallbackUrlTwo = `https://www.googleapis.com/youtube/v3/${resourceType}?${searchParams.toString()}`;
+
+        const fallbackResultTwo = await fetchYouTubeAPI(fallbackUrlTwo);
+        response = fallbackResultTwo.response;
+        data = fallbackResultTwo.data;
+      }
     }
 
     if (!response.ok) {

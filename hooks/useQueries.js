@@ -154,14 +154,21 @@ export const useFeed = () => {
                   ...detailsResponse.data.items,
                 ]
                   .sort(
-                    (a, b) => new Date(b.publishedAt) - new Date(a.publishedAt)
+                    (a, b) =>
+                      new Date(b.snippet.publishedAt) -
+                      new Date(a.snippet.publishedAt)
                   )
                   .splice(0, 50);
 
                 // remove duplicate videos
-                return [
-                  ...new Set(combinedFeed.map((item) => item.id)),
-                ];
+                const uniqueIds = new Set();
+                return combinedFeed.filter((video) => {
+                  if (uniqueIds.has(video.id)) {
+                    return false;
+                  }
+                  uniqueIds.add(video.id);
+                  return true;
+                });
               }
             }
           }
