@@ -192,22 +192,23 @@ export const useSearchVideos = (query) => {
   return useQuery({
     queryKey: ["searchVideos", query],
     queryFn: async () => {
-      if (!query) return []; // Return empty array if no query
+      if (!query) return [];
 
       try {
         Sentry.addBreadcrumb({
           category: "search",
-          message: "Searching videos (step 1: search)",
+          message: "Searching videos, channels and playlists",
           level: "info",
         });
-        // Step 1: Search for videos by query to get their IDs
-        const searchResponse = await axios.get("/api/youtube/search", {
+
+        // Search direct videos
+        const videoSearchResponse = await axios.get("/api/youtube/search", {
           params: {
             part: "snippet",
             type: "video",
             relevanceLanguage: "en",
             safeSearch: "moderate",
-            maxResults: 10,
+            maxResults: 20,
             order: "date",
             videoEmbeddable: true,
             videoSyndicated: true,
@@ -215,40 +216,104 @@ export const useSearchVideos = (query) => {
           },
         });
 
-        if (!searchResponse.data?.items?.length) {
-          return [];
-        }
-
-        const videoIds = searchResponse.data.items
-          .map((item) => item.id.videoId)
-          .join(",");
-
-        Sentry.addBreadcrumb({
-          category: "search",
-          message: "Searching videos (step 2: details)",
-          level: "info",
-        });
-        // Step 2: Fetch full details for the found videos
-        const detailsResponse = await axios.get("/api/youtube/videos", {
+        // Search channels
+        const channelSearchResponse = await axios.get("/api/youtube/search", {
           params: {
-            part: "snippet,statistics,contentDetails",
-            id: videoIds,
+            part: "snippet",
+            type: "channel",
+            relevanceLanguage: "en",
+            safeSearch: "moderate",
+            maxResults: 20,
+            order: "date",
+            q: query,
           },
         });
 
-        return detailsResponse.data.items;
+        // Search playlists
+        const playlistSearchResponse = await axios.get("/api/youtube/search", {
+          params: {
+            part: "snippet",
+            type: "playlist",
+            relevanceLanguage: "en",
+            safeSearch: "moderate",
+            maxResults: 10,
+            order: "date",
+            q: query,
+          },
+        });
+
+        // Get videos from matching channels
+        const channelVideos = await Promise.all(
+          (channelSearchResponse.data?.items || []).map(async (channel) => {
+            const channelId = channel.id.channelId;
+            const res = await axios.get("/api/youtube/search", {
+              params: {
+                part: "snippet",
+                channelId,
+                type: "video",
+                maxResults: 5,
+                order: "date",
+                q: query,
+              },
+            });
+            return res.data.items || [];
+          })
+        );
+
+        // Get videos from matching playlists
+        const playlistVideos = await Promise.all(
+          (playlistSearchResponse.data?.items || []).map(async (playlist) => {
+            const playlistId = playlist.id.playlistId;
+            const res = await axios.get("/api/youtube/playlistItems", {
+              params: {
+                part: "snippet",
+                playlistId,
+                maxResults: 5,
+              },
+            });
+            return res.data.items || [];
+          })
+        );
+
+        // Combine all video items and remove duplicates
+        const allVideoItems = [
+          ...(videoSearchResponse.data?.items || []),
+          ...channelVideos.flat(),
+          ...playlistVideos.flat(),
+        ];
+
+        const validVideoItems = allVideoItems.filter(
+          (item) => item.id?.videoId
+        );
+        const uniqueVideoIds = [
+          ...new Set(validVideoItems.map((item) => item.id.videoId)),
+        ];
+
+        Sentry.addBreadcrumb({
+          category: "search",
+          message: "Fetching video details",
+          level: "info",
+        });
+
+        const detailsResponse = await axios.get("/api/youtube/videos", {
+          params: {
+            part: "snippet,statistics,contentDetails",
+            id: uniqueVideoIds.join(","),
+          },
+        });
+
+        return detailsResponse.data.items || [];
       } catch (error) {
         handleApiError(error);
+        return [];
       }
     },
     enabled: Boolean(query),
     staleTime: STALE_TIME,
     cacheTime: CACHE_TIME,
     refetchOnWindowFocus: false,
-
-    retry: (failureCount, error) => {
-      return failureCount < 2 && !error.message.includes("quota exceeded");
-    },
+    retry: (failureCount, error) =>
+      failureCount < 2 && !error.message.includes("quota exceeded"),
   });
 };
 
@@ -300,7 +365,7 @@ export const useVideoDetails = (videoId) => {
   });
 };
 
-export const useRelatedVideos = (videoId, videoTitle, numberOfVideos) => {
+export const useRelatedVideos = (videoId, videoTitle) => {
   return useQuery({
     queryKey: ["relatedVideos", videoId],
     queryFn: async () => {
@@ -321,7 +386,7 @@ export const useRelatedVideos = (videoId, videoTitle, numberOfVideos) => {
             safeSearch: "moderate",
             videoEmbeddable: true,
             videoSyndicated: true,
-            maxResults: numberOfVideos || 10,
+            maxResults: 10,
             q: videoTitle,
           },
         });
@@ -1036,19 +1101,46 @@ export const useTrendingVideos = () => {
           message: "Fetching trending videos",
           level: "info",
         });
-        const response = await axios.get("/api/youtube/videos", {
-          params: {
-            part: "snippet,statistics,contentDetails",
-            chart: "mostPopular",
-            maxResults: 50,
-          },
-        });
+        const regions = ["NG", "US", "GB", "IN", "BR", "DE", "AU", "JP"];
+        const responses = await Promise.all(
+          regions.map((region) =>
+            axios.get("/api/youtube/videos", {
+              params: {
+                part: "snippet,statistics,contentDetails",
+                chart: "mostPopular",
+                regionCode: region,
+                maxResults: 10,
+              },
+            })
+          )
+        );
 
-        if (!response.data?.items?.length) {
+        const combinedResponse = responses.flatMap(
+          (response) => response.data.items || []
+        );
+
+        if (!combinedResponse.length) {
           throw new Error("No trending videos found");
         }
 
-        return response.data.items;
+        const uniqueVideos = [
+          ...new Map(
+            combinedResponse.map((video) => [video.id, video])
+          ).values(),
+        ];
+
+        //shuffling to avoid regional bias using Fisher-Yates shuffle
+        function shuffleArray(array) {
+          const shuffled = [...array];
+          for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+          }
+          return shuffled;
+        }
+
+        const shuffledVideos = shuffleArray(uniqueVideos);
+        return shuffledVideos;
       } catch (error) {
         handleApiError(error);
       }
