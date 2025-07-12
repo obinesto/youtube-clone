@@ -19,6 +19,40 @@ const handleApiError = (error) => {
   );
 };
 
+// Fisher-Yates shuffle
+function shuffleArray(array) {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
+const fetchVideoDetailsInChunks = async (videoIds) => {
+  const CHUNK_SIZE = 50; // YouTube API limit for IDs per request
+  const allVideoDetails = [];
+  for (let i = 0; i < videoIds.length; i += CHUNK_SIZE) {
+    const chunk = videoIds.slice(i, i + CHUNK_SIZE);
+    if (chunk.length > 0) {
+      try {
+        const response = await axios.get("/api/youtube/videos", {
+          params: {
+            part: "snippet,statistics,contentDetails",
+            id: chunk.join(","),
+          },
+        });
+        if (response.data?.items) {
+          allVideoDetails.push(...response.data.items);
+        }
+      } catch (error) {
+        console.error(`Failed to fetch a chunk of video details:`, error);
+      }
+    }
+  }
+  return allVideoDetails;
+};
+
 const fetchGuestFeed = async () => {
   try {
     Sentry.addBreadcrumb({
@@ -133,42 +167,33 @@ export const useFeed = () => {
               );
               const uniqueVideoIds = [
                 ...new Set(allSearchItems.map((item) => item.id.videoId)),
-              ].join(",");
+              ];
 
-              if (uniqueVideoIds) {
+              if (uniqueVideoIds.length > 0) {
                 Sentry.addBreadcrumb({
                   category: "videos",
                   message: "Fetching detailed video information",
                   level: "info",
                 });
 
-                const detailsResponse = await axios.get("/api/youtube/videos", {
-                  params: {
-                    part: "snippet,statistics,contentDetails",
-                    id: uniqueVideoIds,
-                  },
-                });
+                const detailsItems = await fetchVideoDetailsInChunks(
+                  uniqueVideoIds
+                );
                 // combine feed source for a more unique feed page
-                const combinedFeed = [
+                let combinedFeed = [
                   ...(await fetchGuestFeed()),
-                  ...detailsResponse.data.items,
-                ]
-                  .sort(
-                    (a, b) =>
-                      new Date(b.snippet.publishedAt) -
-                      new Date(a.snippet.publishedAt)
-                  )
-                  .splice(0, 50);
+                  ...detailsItems,
+                ];
 
                 // remove duplicate videos
-                const uniqueIds = new Set();
-                return combinedFeed.filter((video) => {
-                  if (uniqueIds.has(video.id)) {
-                    return false;
-                  }
-                  uniqueIds.add(video.id);
-                  return true;
-                });
+                const uniqueFeed = [
+                  ...new Map(
+                    combinedFeed.map((video) => [video.id, video])
+                  ).values(),
+                ];
+
+                const randomizedFeed = shuffleArray(uniqueFeed);
+                return randomizedFeed.splice(0, 50);
               }
             }
           }
@@ -295,14 +320,11 @@ export const useSearchVideos = (query) => {
           level: "info",
         });
 
-        const detailsResponse = await axios.get("/api/youtube/videos", {
-          params: {
-            part: "snippet,statistics,contentDetails",
-            id: uniqueVideoIds.join(","),
-          },
-        });
-
-        return detailsResponse.data.items || [];
+        if (uniqueVideoIds.length === 0) {
+          return [];
+        }
+        const videoDetails = await fetchVideoDetailsInChunks(uniqueVideoIds);
+        return videoDetails;
       } catch (error) {
         handleApiError(error);
         return [];
@@ -1129,16 +1151,7 @@ export const useTrendingVideos = () => {
           ).values(),
         ];
 
-        //shuffling to avoid regional bias using Fisher-Yates shuffle
-        function shuffleArray(array) {
-          const shuffled = [...array];
-          for (let i = shuffled.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-          }
-          return shuffled;
-        }
-
+        //shuffling to avoid regional bias
         const shuffledVideos = shuffleArray(uniqueVideos);
         return shuffledVideos;
       } catch (error) {
