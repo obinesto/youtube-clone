@@ -1277,7 +1277,7 @@ export const useIsSubscribed = (channelId) => {
           level: "info",
         });
         const response = await fetch(
-          `/api/subscriptions/${channelId}?email=${encodeURIComponent(
+          `/api/subscriptions?channelId=${channelId}&email=${encodeURIComponent(
             user.email
           )}`,
           {
@@ -1290,7 +1290,7 @@ export const useIsSubscribed = (channelId) => {
         if (!response.ok)
           throw new Error("Failed to check subscription status");
         const data = await response.json();
-        return data.isSubscribed || false;
+        return data.isSubscribed ?? false;
       } catch (error) {
         handleApiError(error);
       }

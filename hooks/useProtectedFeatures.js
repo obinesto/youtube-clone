@@ -126,7 +126,7 @@ export function useProtectedFeatures(videoId, channelId) {
     try {
       await subscribeMutation.mutateAsync({
         channelId,
-        action: isSubscribedData ? "add" : "remove",
+        action: isSubscribedData ? "remove" : "add",
         email: userEmail,
         token,
       });

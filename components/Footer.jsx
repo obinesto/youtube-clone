@@ -54,18 +54,24 @@ const Footer = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="flex px-16 gap-4 text-muted-foreground">
-            <Link href="/" className=" hover:text-customRed transition-colors">Home</Link>
+            <Link href="/" className=" hover:text-customRed transition-colors">
+              Home
+            </Link>
 
-            <Link href="/trending" passHref className=" hover:text-customRed transition-colors">
+            <Link
+              href="/trending"
+              passHref
+              className=" hover:text-customRed transition-colors"
+            >
               Trending
             </Link>
 
-            <Link href="/subscriptions" passHref className=" hover:text-customRed transition-colors">
+            <Link
+              href="/subscriptions"
+              passHref
+              className=" hover:text-customRed transition-colors"
+            >
               Subscriptions
-            </Link>
-
-            <Link href="/library" passHref className=" hover:text-customRed transition-colors">
-              Library
             </Link>
           </CardContent>
         </Card>
@@ -75,31 +81,31 @@ const Footer = () => {
             <CardTitle className="text-lg">Connect</CardTitle>
           </CardHeader>
           <CardContent className="flex px-16 gap-4">
-              {socialLinks.map((link) => (
-                <HoverCard key={link.name} openDelay={200}>
-                  <HoverCardTrigger asChild>
-                    <Link
-                      href={link.href}
-                      target="blank"
-                      className="flex items-center space-x-2 text-muted-foreground hover:text-customRed transition-colors"
-                    >
-                      {link.icon}
-                      <span>{link.name}</span>
-                    </Link>
-                  </HoverCardTrigger>
-                  <HoverCardContent className="w-auto">
-                    <div className="flex items-center space-x-2">
-                      {link.icon}
-                      <div>
-                        <h4 className="text-sm font-semibold">{link.name}</h4>
-                        <p className="text-sm text-muted-foreground">
-                          {link.description}
-                        </p>
-                      </div>
+            {socialLinks.map((link) => (
+              <HoverCard key={link.name} openDelay={200}>
+                <HoverCardTrigger asChild>
+                  <Link
+                    href={link.href}
+                    target="blank"
+                    className="flex items-center space-x-2 text-muted-foreground hover:text-customRed transition-colors"
+                  >
+                    {link.icon}
+                    <span>{link.name}</span>
+                  </Link>
+                </HoverCardTrigger>
+                <HoverCardContent className="w-auto">
+                  <div className="flex items-center space-x-2">
+                    {link.icon}
+                    <div>
+                      <h4 className="text-sm font-semibold">{link.name}</h4>
+                      <p className="text-sm text-muted-foreground">
+                        {link.description}
+                      </p>
                     </div>
-                  </HoverCardContent>
-                </HoverCard>
-              ))}
+                  </div>
+                </HoverCardContent>
+              </HoverCard>
+            ))}
           </CardContent>
         </Card>
       </div>

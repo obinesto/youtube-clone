@@ -23,6 +23,7 @@ export async function GET(request) {
 
     const { searchParams } = new URL(request.url);
     const email = searchParams.get("email");
+    const channelId = searchParams.get("channelId");
 
     if (!email) {
       return NextResponse.json({ error: "Email is required" }, { status: 400 });
@@ -44,6 +45,24 @@ export async function GET(request) {
       throw userError;
     }
 
+    // Check if a user is subscribed to a channel
+    if (channelId) {
+      const { data: subscribed, error: isSubscribedError } = await supabase
+        .from("subscriptions")
+        .select("channel_id")
+        .eq("user_id", user.id)
+        .eq("channel_id", channelId);
+
+      if (isSubscribedError && isSubscribedError !== "PGRST116") {
+        // PGRST116 is "no rows returned"
+        throw isSubscribedError;
+      }
+
+      return NextResponse.json({
+        isSubscribed: subscribed && subscribed.length > 0,
+      });
+    }
+
     // Fetch all subscriptions for the user
     const { data: subscriptions, error: subError } = await supabase
       .from("subscriptions")
@@ -54,7 +73,7 @@ export async function GET(request) {
       throw subError;
     }
 
-    return NextResponse.json(subscriptions);
+    return NextResponse.json({ subscriptions });
   } catch (error) {
     console.error("Error fetching subscriptions:", error);
     return NextResponse.json(

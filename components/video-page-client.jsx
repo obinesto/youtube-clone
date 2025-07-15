@@ -22,12 +22,7 @@ import { formatViews, formatDate } from "@/lib/utils/dateFormat";
 import RelatedVideos from "@/components/RelatedVideos";
 import { useVideoDetails } from "@/hooks/useQueries";
 
-export default function VideoPageClient({
-  videoId,
-  channelId,
-  initialVideoData,
-  error,
-}) {
+export default function VideoPageClient({ videoId, initialVideoData, error }) {
   const { isAuthenticated } = useUserStore();
 
   const {
@@ -35,6 +30,8 @@ export default function VideoPageClient({
     isError: isVideoErrorHook,
     error: videoErrorHook,
   } = useVideoDetails(videoId, initialVideoData);
+
+  const channelId = video?.snippet?.channelId;
 
   const displayVideo = initialVideoData && !error ? initialVideoData : video;
   const displayError = error || (isVideoErrorHook ? videoErrorHook : null);

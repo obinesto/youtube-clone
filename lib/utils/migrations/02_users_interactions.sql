@@ -71,7 +71,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER update_videos_updated_at
-BEFORE UPDATE ON public.videos
-FOR EACH ROW
-EXECUTE PROCEDURE update_updated_at_column();
+-- CREATE TRIGGER update_videos_updated_at
+-- BEFORE UPDATE ON public.videos
+-- FOR EACH ROW
+-- EXECUTE PROCEDURE update_updated_at_column();

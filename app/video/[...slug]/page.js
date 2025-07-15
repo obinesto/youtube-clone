@@ -55,7 +55,7 @@ const getVideoData = cache(async (videoId) => {
 
 // Dynamically generate metadata
 export async function generateMetadata({ params }) {
-  const [videoId, channelIdentifier] = params.slug || [];
+  const [videoId, channelIdentifier] = await params.slug || [];
 
   if (!videoId) {
     return { title: "Video Not Found" };
@@ -143,7 +143,7 @@ function VideoError() {
 
 export default async function VideoPage({ params }) {
   // Use array destructuring for cleaner slug parsing
-  const [videoId, channelId] = params.slug || [];
+  const [videoId, channelTitle] = await params.slug || [];
 
   // A videoId is required to fetch data.
   if (!videoId) {
@@ -153,12 +153,12 @@ export default async function VideoPage({ params }) {
   const videoData = await getVideoData(videoId);
 
   // If data fetching fails or the video doesn't exist, show an error.
-  // The channelId is also required to render the client component.
-  if (!videoData || !channelId) {
+  // The channelTitle is also required to render the client component.
+  if (!videoData || !channelTitle) {
     return <VideoError />;
   }
 
   return (
-    <VideoPageClient videoId={videoId} channelId={channelId} initialVideoData={videoData} />
+    <VideoPageClient videoId={videoId} initialVideoData={videoData} />
   );
 }

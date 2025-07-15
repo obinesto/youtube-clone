@@ -65,7 +65,7 @@ export async function GET(request) {
         throw likeError;
       }
 
-      return NextResponse.json({ isLiked: !!like });
+      return NextResponse.json({ isLiked: like && like.length > 0 });
     }
 
     // Get all liked videos

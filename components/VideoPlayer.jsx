@@ -209,7 +209,7 @@ const VideoPlayer = ({ videoId }) => {
           onValueChange={handleSeek}
           max={100}
           step={0.1}
-          className="mb-4 [&_[role=slider]]:bg-customRed"
+          className="mb-4 [&_[role=slider]]:bg-customRed cursor-pointer"
           aria-label="Video progress"
         />
 
