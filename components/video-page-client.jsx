@@ -46,7 +46,7 @@ export default function VideoPageClient({ videoId, initialVideoData, error }) {
     isLoadingLike,
     isLoadingSavedVideo,
     isLoadingSubscriptions,
-  } = useProtectedFeatures(videoId, channelId);
+  } = useProtectedFeatures(videoId, channelId, displayVideo?.snippet?.channelTitle);
 
   const [updateLike, setUpdateLike] = useState(false);
   const [updateSavedVideo, setUpdateSavedVideo] = useState(false);

@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import Image from "next/image";
 import { toast } from "sonner";
 import { formatDate, formatDuration } from "@/lib/utils/dateFormat";
 import { useEffect, useRef, useState } from "react";
@@ -229,11 +230,12 @@ const VideoCard = ({
               allowFullScreen
             />
           ) : (
-            <img
+            <Image
               src={thumbnail || "/placeholder.svg"}
               alt={title || "Video thumbnail"}
-              className="object-cover w-full h-full"
+              className="object-cover"
               loading="lazy"
+              fill
             />
           )}
           {formattedDuration && !shouldShowVideo && (

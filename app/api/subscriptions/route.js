@@ -85,9 +85,9 @@ export async function GET(request) {
 
 export async function POST(request) {
   try {
-    const { email, channelId, action } = await request.json();
+    const { email, channelId, channelTitle, action } = await request.json();
 
-    if (!email || !channelId) {
+    if (!email || !channelId || !channelTitle) {
       return NextResponse.json(
         { error: "Email and channelId are required" },
         { status: 400 }
@@ -115,7 +115,13 @@ export async function POST(request) {
       // Insert new subscription
       const { error: insertError } = await supabase
         .from("subscriptions")
-        .insert([{ user_id: user.id, channel_id: channelId }]);
+        .insert([
+          {
+            user_id: user.id,
+            channel_id: channelId,
+            channel_title: channelTitle,
+          },
+        ]);
 
       if (insertError) {
         throw insertError;

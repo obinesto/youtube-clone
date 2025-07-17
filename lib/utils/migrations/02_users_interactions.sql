@@ -45,6 +45,7 @@ CREATE TABLE IF NOT EXISTS public.subscriptions (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID NOT NULL REFERENCES users(id),
   channel_id TEXT NOT NULL,
+  channel_title TEXT NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()),
   UNIQUE(user_id, channel_id)
 );
@@ -53,14 +54,15 @@ CREATE TABLE IF NOT EXISTS public.subscriptions (
 -- Create indexes
 CREATE INDEX IF NOT EXISTS video_likes_user_id_idx ON public.video_likes(user_id);
 CREATE INDEX IF NOT EXISTS video_likes_video_id_idx ON public.video_likes(video_id);
-CREATE INDEX IF NOT EXISTS watch_later_user_id_idx ON public.saved_videos(user_id);
-CREATE INDEX IF NOT EXISTS watch_later_video_id_idx ON public.saved_videos(video_id);
+CREATE INDEX IF NOT EXISTS saved_videos_user_id_idx ON public.saved_videos(user_id);
+CREATE INDEX IF NOT EXISTS saved_videos_video_id_idx ON public.saved_videos(video_id);
 CREATE INDEX IF NOT EXISTS watch_history_user_id_idx ON public.watch_history(user_id);
 CREATE INDEX IF NOT EXISTS watch_history_video_id_idx ON public.watch_history(video_id);
 CREATE INDEX IF NOT EXISTS videos_user_id_idx ON public.videos(user_id);
 CREATE INDEX IF NOT EXISTS videos_public_id_idx ON public.videos(public_id);
 CREATE INDEX IF NOT EXISTS subscriptions_user_id_idx ON public.subscriptions(user_id);
 CREATE INDEX IF NOT EXISTS subscriptions_channel_id_idx ON public.subscriptions(channel_id);
+CREATE INDEX IF NOT EXISTS subscriptions_channel_title_idx ON public.subscriptions(channel_title);
 
 -- Create function to automatically update updated_at
 CREATE OR REPLACE FUNCTION update_updated_at_column()

@@ -1209,7 +1209,7 @@ export const useSubscribeMutation = () => {
   const { token, user } = useUserStore();
 
   return useMutation({
-    mutationFn: async ({ channelId, action }) => {
+    mutationFn: async ({ channelId, action, channelTitle }) => {
       try {
         if (!user?.email) {
           throw new Error("User email required");
@@ -1230,6 +1230,7 @@ export const useSubscribeMutation = () => {
           body: JSON.stringify({
             channelId,
             action,
+            channelTitle,
             email: user.email,
           }),
         });
@@ -1300,5 +1301,80 @@ export const useIsSubscribed = (channelId) => {
     cacheTime: CACHE_TIME,
     refetchOnWindowFocus: false,
     retry: 1,
+  });
+};
+
+export const useChannelInfo = (subscriptions) => {
+  return useQuery({
+    queryKey: ["channelInfo", subscriptions],
+    queryFn: async () => {
+      if (!Array.isArray(subscriptions) || subscriptions.length === 0) {
+        return [];
+      }
+
+      try {
+        const channelIds = subscriptions.map(sub => sub.channel_id);
+        const uniqueChannelIds = [...new Set(channelIds)];
+
+        // Fetch channel info
+        const channels = await Promise.all(
+          uniqueChannelIds.map(async (channelId) => {
+            try {
+              // Get channel info
+              const channelResponse = await axios.get("/api/youtube/channels", {
+                params: {
+                  part: "snippet,statistics",
+                  id: channelId,
+                },
+              });
+
+              // Get channel's recent videos
+              const videosResponse = await axios.get("/api/youtube/search", {
+                params: {
+                  part: "snippet",
+                  channelId: channelId,
+                  order: "date",
+                  type: "video",
+                  maxResults: 12,
+                },
+              });
+
+              // Get full video details for the channel's videos
+              const videoIds = videosResponse.data.items.map(
+                (item) => item.id.videoId
+              );
+              const videoDetailsResponse = await axios.get("/api/youtube/videos", {
+                params: {
+                  part: "snippet,statistics,contentDetails",
+                  id: videoIds.join(","),
+                },
+              });
+
+              return {
+                channelInfo: {
+                  channel_id: channelId,
+                  channel_title: channelResponse.data.items[0]?.snippet?.title,
+                  snippet: channelResponse.data.items[0]?.snippet,
+                  statistics: channelResponse.data.items[0]?.statistics,
+                },
+                videos: videoDetailsResponse.data.items || [],
+              };
+            } catch (error) {
+              console.error(`Error fetching data for channel ${channelId}:`, error);
+              return null;
+            }
+          })
+        );
+
+        // Filter out any failed channel requests
+        return channels.filter(Boolean);
+      } catch (error) {
+        console.error("Error in useChannelInfo:", error);
+        throw error;
+      }
+    },
+    enabled: Boolean(subscriptions?.length > 0),
+    staleTime: STALE_TIME,
+    cacheTime: CACHE_TIME
   });
 };

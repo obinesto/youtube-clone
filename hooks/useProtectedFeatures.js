@@ -19,7 +19,7 @@ import {
   useIsSubscribed,
 } from "./useQueries";
 
-export function useProtectedFeatures(videoId, channelId) {
+export function useProtectedFeatures(videoId, channelId, channelTitle) {
   const router = useRouter();
   const { isAuthenticated, user, token } = useUserStore();
   const userEmail = user?.email;
@@ -118,7 +118,7 @@ export function useProtectedFeatures(videoId, channelId) {
       return;
     }
 
-    if (!userEmail || !channelId) {
+    if (!userEmail || !channelId || !channelTitle) {
       console.error("Missing required data for subscribe operation");
       return;
     }
@@ -126,6 +126,7 @@ export function useProtectedFeatures(videoId, channelId) {
     try {
       await subscribeMutation.mutateAsync({
         channelId,
+        channelTitle,
         action: isSubscribedData ? "remove" : "add",
         email: userEmail,
         token,
@@ -137,6 +138,7 @@ export function useProtectedFeatures(videoId, channelId) {
   }, [
     isAuthenticated,
     channelId,
+    channelTitle,
     isSubscribedData,
     subscribeMutation,
     router,
