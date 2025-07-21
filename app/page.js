@@ -13,9 +13,21 @@ export default function Home() {
     return (
       <div className="p-4 mt-16 md:ml-5">
         <Alert variant="destructive">
-          <AlertDescription className="flex flex-col md:flex-row items-center justify-center gap-2">
-            <AlertTriangle className="h-4 w-4" />
-            <span>{error?.message}</span>
+          <AlertDescription className="flex flex-col items-center justify-center gap-2">
+            <AlertTriangle className="h-4 w-4 text-red-500" />
+            <span className="text-center">
+              {error?.message && error?.message.includes("quota") ? (
+                <>
+                  <p>⛔ YouTube API quota exhausted.</p>
+                  <p>
+                    Kindly come back in the next 24 hours when it will be reset.
+                    Thanks for your patience!🙏
+                  </p>
+                </>
+              ) : (
+                "Error loading feed videos. Please try again later"
+              )}
+            </span>
           </AlertDescription>
         </Alert>
       </div>
@@ -25,7 +37,9 @@ export default function Home() {
   return (
     <main className="container mx-auto px-4 pt-16">
       <Card className="p-4 border-hidden">
-        <h1 className="text-xl md:text-2xl font-bold text-customRed dark:text-customRed">Feed</h1>
+        <h1 className="text-xl md:text-2xl font-bold text-customRed dark:text-customRed">
+          Feed
+        </h1>
       </Card>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {isLoading

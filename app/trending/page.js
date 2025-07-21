@@ -13,10 +13,21 @@ export default function TrendingPage() {
     return (
       <div className="p-4 mt-16 md:ml-5">
         <Alert variant="destructive">
-          <AlertDescription className="flex flex-col md:flex-row items-center justify-center gap-2">
-            <AlertTriangle className="h-4 w-4" />
-            <span>Error loading trending videos.</span>
-            <span>Please try again later.</span>
+          <AlertDescription className="flex flex-col items-center justify-center gap-2">
+            <AlertTriangle className="h-4 w-4 text-red-500" />
+            <span className="text-center">
+              {error?.message && error?.message.includes("quota") ? (
+                <>
+                  <p>⛔ YouTube API quota exhausted.</p>
+                  <p>
+                    Kindly come back in the next 24 hours when it will be reset.
+                    Thanks for your patience!🙏
+                  </p>
+                </>
+              ) : (
+                "Error loading trending videos. Please try again later"
+              )}
+            </span>
           </AlertDescription>
         </Alert>
       </div>

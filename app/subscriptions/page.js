@@ -41,15 +41,24 @@ export default function SubscriptionsPage() {
 
   if (error || ChannelDataError) {
     return (
-      <div className="flex flex-col pt-16 px-4">
-        <h1 className="text-2xl md:text-3xl font-bold mb-6">Subscriptions</h1>
-        <Alert variant="destructive" className="max-w-2xl mx-auto">
-          <AlertTitle className="flex items-center justify-center gap-2">
-            <AlertTriangle className="h-4 w-4" />
-            Error loading channels
-          </AlertTitle>
-          <AlertDescription className="mt-2 text-center">
-            {error.message}
+      <div className="p-4 mt-16 md:ml-5">
+        <h1 className="text-3xl font-bold mb-6">Subscriptions</h1>
+        <Alert variant="destructive">
+          <AlertDescription className="flex flex-col items-center justify-center gap-2">
+            <AlertTriangle className="h-4 w-4 text-red-500" />
+            <span className="text-center">
+              {error?.message && error?.message.includes("quota") ? (
+                <>
+                  <p>⛔ YouTube API quota exhausted.</p>
+                  <p>
+                    Kindly come back in the next 24 hours when it will be reset.
+                    Thanks for your patience!🙏
+                  </p>
+                </>
+              ) : (
+                "Error loading subscribed channels. Please try again later"
+              )}
+            </span>
           </AlertDescription>
         </Alert>
       </div>
@@ -74,12 +83,12 @@ export default function SubscriptionsPage() {
     }));
   };
 
-  const toggleChannelVideos = (channelId) =>{
+  const toggleChannelVideos = (channelId) => {
     setShowChannelVideos((prev) => ({
       ...prev,
-      [channelId]: !prev[channelId]
-    }))
-  }
+      [channelId]: !prev[channelId],
+    }));
+  };
 
   const getSortedVideos = (videos, channelId) => {
     if (!videos) return [];
@@ -126,7 +135,8 @@ export default function SubscriptionsPage() {
             {channelData.map((channel) => {
               const channelInfo = channel?.channelInfo;
               const videos = channel?.videos;
-              const handleChannelVisibility = showChannelVideos[channelInfo.channel_id]
+              const handleChannelVisibility =
+                showChannelVideos[channelInfo.channel_id];
 
               return (
                 <div key={channelInfo.channel_id} className="space-y-4">

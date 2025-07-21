@@ -27,11 +27,20 @@ function SearchPage({ params }) {
     return (
       <div className="p-4 mt-16 md:ml-5">
         <Alert variant="destructive">
-          <AlertDescription className="flex items-center justify-center gap-2">
-            <AlertTriangle className="h-4 w-4" />
-            <span>
-              {error?.message ||
-                "Error loading search results. Please try again later."}
+          <AlertDescription className="flex flex-col items-center justify-center gap-2">
+            <AlertTriangle className="h-4 w-4 text-red-500" />
+            <span className="text-center">
+              {error?.message && error?.message.includes("quota") ? (
+                <>
+                  <p>⛔ YouTube API quota exhausted.</p>
+                  <p>
+                    Kindly come back in the next 24 hours when it will be reset.
+                    Thanks for your patience!🙏
+                  </p>
+                </>
+              ) : (
+                "Error loading search results. Please try again later"
+              )}
             </span>
           </AlertDescription>
         </Alert>
