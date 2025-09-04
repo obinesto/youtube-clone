@@ -1,6 +1,6 @@
 # YouTube Clone
 
-A modern progressive web application built with Next.js, Node.js, React, and Supabase. This application replicates core YouTube functionalities with a clean, responsive interface.
+A modern progressive web application (PWA) built with Next.js, React, and Supabase. This application replicates core YouTube functionalities with a clean, responsive interface and includes features like push notifications and offline capabilities.
 
 ## 🚀 Features
 
@@ -8,6 +8,11 @@ A modern progressive web application built with Next.js, Node.js, React, and Sup
   - Email/Password and Google sign-in
   - Protected routes for authenticated features
   - Password reset functionality
+
+- **Progressive Web App (PWA)**
+  - Installable on mobile and desktop devices for an app-like experience.
+  - Offline caching of core assets for instant loading.
+  - Push notifications for user interactions (e.g., liking a video).
 
 - **Video Experience**
   - YouTube video playback with custom controls
@@ -34,11 +39,10 @@ A modern progressive web application built with Next.js, Node.js, React, and Sup
 
 - **UI/UX**
   - Responsive design for all devices
-  - Dark/Light mode toggle
+  - Dark/Light mode toggle with system preference detection
   - Modern UI with Tailwind CSS
   - Loading states and error handling
-  - Toast notifications
-  - Infinite scroll support
+  - Toast notifications for user feedback
 
 ## 🛠️ Technology Stack
 
@@ -51,10 +55,9 @@ A modern progressive web application built with Next.js, Node.js, React, and Sup
   - Zustand for state management
 
 - **Backend & Database**
-  - Supabase for database and storage
-  - Firebase for database and authentication
+  - **Supabase**: Primary database and backend services.
+  - **Firebase**: User authentication (Email/Password, Google).
   - YouTube Data API integration
-  - Node.js for server files 
 
 ## 📦 Dependencies
 
@@ -62,11 +65,11 @@ A modern progressive web application built with Next.js, Node.js, React, and Sup
 - @radix-ui components for UI
 - @supabase/supabase-js for database operations
 - @tanstack/react-query for data management
-- Firebase for additional services
+- firebase for authentication
 - YouTube Data API for video data
 - Sentry for error tracking and management
+- next-pwa for PWA integration
 - Various UI utilities and helpers
-- Next-pwa for PWA integration
 
 ## 🚀 Getting Started
 
@@ -83,11 +86,26 @@ A modern progressive web application built with Next.js, Node.js, React, and Sup
 
 3. **Set up environment variables**
    Create a `.env.local` file with:
-   ```
+   ```env
+   # Supabase
    NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
    SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_key
+
+   # YouTube
    YOUTUBE_API_KEY=your_youtube_api_key
+
+   # Firebase (Client-side)
+   NEXT_PUBLIC_FIREBASE_API_KEY=
+   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=
+   NEXT_PUBLIC_FIREBASE_PROJECT_ID=
+   NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=
+   NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
+   NEXT_PUBLIC_FIREBASE_APP_ID=
+
+   # Firebase Admin (Server-side) - Use JSON string or Base64
+   FIREBASE_ADMIN_SDK_PRIVATE_KEY=
+   FIREBASE_ADMIN_SDK_CLIENT_EMAIL=
    ```
 
 4. **Run the development server**
@@ -111,7 +129,6 @@ youtube-clone/
 │   └── [other routes]/   # Application routes
 ├── components/           # React components
 │   ├── ui/              # UI components
-│   └── [feature]/       # Feature components
 ├── hooks/               # Custom React hooks
 ├── lib/                 # Utilities and helpers
 └── public/             # Static assets
@@ -123,8 +140,7 @@ The following features require authentication:
 - Liked videos
 - Watch later
 - Watch history
-- Subscriptions
-- Video upload and management
+- Channel subscriptions
 - User profile management
 
 ## 🎮 Available Scripts

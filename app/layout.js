@@ -8,7 +8,7 @@ import PwaSetup from "./pwa/pwa";
 import { Providers } from "./providers";
 import { Toaster } from "@/components/ui/sonner";
 import { Analytics } from "@vercel/analytics/react";
-import { SpeedInsights } from "@vercel/speed-insights/next"
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -67,13 +67,13 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <link rel="manifest" href="/manifest.json" />
         <link
           rel="icon"
           href="/icon?<generated>"
           type="image/<generated>"
           sizes="<generated>"
         />
-        <meta name="apple-mobile-web-app-title" content="YouTube Clone" />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased overflow-x-hidden`}
@@ -92,8 +92,8 @@ export default function RootLayout({ children }) {
           </ErrorBoundary>
           <Toaster />
         </Providers>
-        < PwaSetup />
-        <SpeedInsights/>
+        <PwaSetup />
+        <SpeedInsights />
         <Analytics />
       </body>
     </html>
