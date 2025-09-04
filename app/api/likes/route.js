@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import { validateRequest } from '@/lib/utils/auth';
+import { sendPushNotification, getSubscriptionsForUser } from '@/lib/pwa';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -139,6 +140,37 @@ export async function POST(request) {
         return NextResponse.json({ success: true }); // Already liked
       }
       if (error) throw error;
+
+      // --- START: PUSH NOTIFICATION LOGIC (Self-Notification) ---
+      try {
+        // 1. Get the new total count of liked videos for the user.
+        const { count, error: countError } = await supabase
+          .from('video_likes')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id);
+
+        if (countError) throw countError;
+
+        // 2. Get the push subscriptions for the user who performed the action.
+        const subscriptions = await getSubscriptionsForUser(user.id);
+
+        // 3. Prepare the notification payload.
+        const payload = {
+          title: 'Liked Videos Updated!',
+          body: `You now have ${count} liked videos.`,
+          icon: '/icon.png',
+        };
+
+        // 4. Send a notification to each of the user's subscribed devices.
+        for (const sub of subscriptions) {
+          await sendPushNotification(sub, payload);
+        }
+      } catch (notificationError) {
+        // Log the error but don't fail the main API request.
+        // The user's "like" was still saved successfully.
+        console.error('Failed to send like-count push notification:', notificationError);
+      }
+      // --- END: PUSH NOTIFICATION LOGIC ---
     } else if (action === 'unlike') {
       const { error } = await supabase
         .from('video_likes')
@@ -158,4 +190,3 @@ export async function POST(request) {
     );
   }
 }
-

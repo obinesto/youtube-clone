@@ -1,6 +1,6 @@
 # YouTube Clone
 
-A modern YouTube clone built with Next.js 15, React, and Supabase. This application replicates core YouTube functionalities with a clean, responsive interface.
+A modern progressive web application built with Next.js, Node.js, React, and Supabase. This application replicates core YouTube functionalities with a clean, responsive interface.
 
 ## 🚀 Features
 
@@ -43,17 +43,18 @@ A modern YouTube clone built with Next.js 15, React, and Supabase. This applicat
 ## 🛠️ Technology Stack
 
 - **Frontend**
-  - Next.js 15
-  - React 19
+  - Next.js 15 or later
+  - React 19 or later
   - TanStack Query for data fetching
   - Tailwind CSS for styling
   - Radix UI for accessible components
   - Zustand for state management
 
 - **Backend & Database**
-  - Supabase for database and authentication
-  - Firebase for additional services
+  - Supabase for database and storage
+  - Firebase for database and authentication
   - YouTube Data API integration
+  - Node.js for server files 
 
 ## 📦 Dependencies
 
@@ -65,6 +66,7 @@ A modern YouTube clone built with Next.js 15, React, and Supabase. This applicat
 - YouTube Data API for video data
 - Sentry for error tracking and management
 - Various UI utilities and helpers
+- Next-pwa for PWA integration
 
 ## 🚀 Getting Started
 

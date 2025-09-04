@@ -4,6 +4,7 @@ import SideBar from "@/components/SideBar";
 import Footer from "@/components/Footer";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import ModeToggle from "@/components/mode/ModeToggle";
+import PwaSetup from "./pwa/pwa";
 import { Providers } from "./providers";
 import { Toaster } from "@/components/ui/sonner";
 import { Analytics } from "@vercel/analytics/react";
@@ -21,26 +22,27 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Youtube Clone - By Cyprian Obi",
+  title: "YouTube Clone - By Cyprian Obi",
   description:
-    "A web application that replicates the core features of YouTube.",
+    "A progressive web application that replicates the core features of YouTube.",
   author: "Cyprian Obi",
   url: "https://youtube-clone-cyprianobi.vercel.app/",
   keywords: [
     "YouTube Clone",
-    "Web Application",
+    "Progressive Web Application",
     "Video Sharing",
     "Cyprian Obi",
     "Next.js",
     "React",
     "Tailwind CSS",
+    "Node.js",
   ],
   creator: "Cyprian Obi",
   openGraph: {
     type: "website",
-    title: "Youtube Clone - By Cyprian Obi",
+    title: "YouTube Clone - By Cyprian Obi",
     description:
-      "A web application that replicates the core features of YouTube.",
+      "A progressive web application that replicates the core features of YouTube.",
     url: "https://youtube-clone-cyprianobi.vercel.app/",
     images: [
       {
@@ -53,9 +55,9 @@ export const metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Youtube Clone - By Cyprian Obi",
+    title: "YouTube Clone - By Cyprian Obi",
     description:
-      "A web application that replicates the core features of YouTube.",
+      "A progessive web application that replicates the core features of YouTube.",
     creator: "@Mc_Cprian02",
     images: ["https://youtube-clone-cyprianobi.vercel.app/preview.png"],
   },
@@ -71,6 +73,7 @@ export default function RootLayout({ children }) {
           type="image/<generated>"
           sizes="<generated>"
         />
+        <meta name="apple-mobile-web-app-title" content="YouTube Clone" />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased overflow-x-hidden`}
@@ -89,6 +92,7 @@ export default function RootLayout({ children }) {
           </ErrorBoundary>
           <Toaster />
         </Providers>
+        < PwaSetup />
         <SpeedInsights/>
         <Analytics />
       </body>

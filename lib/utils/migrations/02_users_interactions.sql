@@ -50,6 +50,15 @@ CREATE TABLE IF NOT EXISTS public.subscriptions (
   UNIQUE(user_id, channel_id)
 );
 
+-- Create pwa_subscriptions table
+CREATE TABLE IF NOT EXISTS public.pwa_subscriptions (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  endpoint TEXT NOT NULL UNIQUE,
+  subscription_data JSONB NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
+);
+
 
 -- Create indexes
 CREATE INDEX IF NOT EXISTS video_likes_user_id_idx ON public.video_likes(user_id);
@@ -63,6 +72,7 @@ CREATE INDEX IF NOT EXISTS videos_public_id_idx ON public.videos(public_id);
 CREATE INDEX IF NOT EXISTS subscriptions_user_id_idx ON public.subscriptions(user_id);
 CREATE INDEX IF NOT EXISTS subscriptions_channel_id_idx ON public.subscriptions(channel_id);
 CREATE INDEX IF NOT EXISTS subscriptions_channel_title_idx ON public.subscriptions(channel_title);
+CREATE INDEX IF NOT EXISTS pwa_subscriptions_user_id_idx ON public.pwa_subscriptions(user_id);
 
 -- Create function to automatically update updated_at
 CREATE OR REPLACE FUNCTION update_updated_at_column()
