@@ -90,9 +90,9 @@ export default function RootLayout({ children }) {
               <ModeToggle />
             </div>
           </ErrorBoundary>
+          <PwaSetup />
           <Toaster />
         </Providers>
-        <PwaSetup />
         <SpeedInsights />
         <Analytics />
       </body>

@@ -42,14 +42,22 @@ const NavBar = () => {
   const { user, logout } = useUserStore();
   const { isSidebarOpen, toggleSidebar } = useUIStore();
   const [query, setSearchQuery] = useState("");
-  const { data: searchVideos, isLoading } = useSearchVideos(query);
+  const [debouncedQuery, setDebouncedQuery] = useState(query);
+  const { data: searchVideos, isLoading } = useSearchVideos(debouncedQuery);
   const { watchHistory, likedVideos, savedVideos, userVideos } =
     useProtectedFeatures();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const router = useRouter();
 
-  // Update notifications when protected features change
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(query);
+    }, 500); // 500ms delay
+
+    return () => clearTimeout(timer); // makes the function restart on every keystroke since query is a dependency. So it will only pass a value when 500ms has elapsed without a keystroke
+  }, [query]);
+
   useEffect(() => {
     if (!user) return;
 
@@ -83,7 +91,7 @@ const NavBar = () => {
     setSearchQuery(e.target.value);
   };
 
-  // Handle search submission (Enter key or button click)
+  // Handle search submission (Enter key or button click) - uses immediate query for responsiveness
   const handleSearchSubmit = () => {
     if (!query.trim()) return;
     setIsSearchOpen(false);

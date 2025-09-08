@@ -4,7 +4,7 @@ import useUserStore from "./useStore";
 import * as Sentry from "@sentry/react";
 
 const STALE_TIME = 1000 * 60 * 5; // 5 minutes
-const CACHE_TIME = 1000 * 60 * 30; // 30 minutes
+const CACHE_TIME = 1000 * 60 * 60 * 24 * 7; // 1 week
 
 const handleApiError = (error) => {
   Sentry.captureException(error);
@@ -215,123 +215,28 @@ export const useFeed = () => {
 
 export const useSearchVideos = (query) => {
   return useQuery({
-    queryKey: ["searchVideos", query],
+    queryKey: ["search", query],
     queryFn: async () => {
       if (!query) return [];
-
       try {
         Sentry.addBreadcrumb({
           category: "search",
-          message: "Searching videos, channels and playlists",
+          message: `Searching for: "${query}"`,
           level: "info",
         });
-
-        // Search direct videos
-        const videoSearchResponse = await axios.get("/api/youtube/search", {
+        const { data } = await axios.get("/api/search", {
           params: {
-            part: "snippet",
-            type: "video",
-            relevanceLanguage: "en",
-            safeSearch: "moderate",
-            maxResults: 20,
-            order: "date",
-            videoEmbeddable: true,
-            videoSyndicated: true,
             q: query,
           },
         });
-
-        // Search channels
-        const channelSearchResponse = await axios.get("/api/youtube/search", {
-          params: {
-            part: "snippet",
-            type: "channel",
-            relevanceLanguage: "en",
-            safeSearch: "moderate",
-            maxResults: 20,
-            order: "date",
-            q: query,
-          },
-        });
-
-        // Search playlists
-        const playlistSearchResponse = await axios.get("/api/youtube/search", {
-          params: {
-            part: "snippet",
-            type: "playlist",
-            relevanceLanguage: "en",
-            safeSearch: "moderate",
-            maxResults: 10,
-            order: "date",
-            q: query,
-          },
-        });
-
-        // Get videos from matching channels
-        const channelVideos = await Promise.all(
-          (channelSearchResponse.data?.items || []).map(async (channel) => {
-            const channelId = channel.id.channelId;
-            const res = await axios.get("/api/youtube/search", {
-              params: {
-                part: "snippet",
-                channelId,
-                type: "video",
-                maxResults: 5,
-                order: "date",
-                q: query,
-              },
-            });
-            return res.data.items || [];
-          })
-        );
-
-        // Get videos from matching playlists
-        const playlistVideos = await Promise.all(
-          (playlistSearchResponse.data?.items || []).map(async (playlist) => {
-            const playlistId = playlist.id.playlistId;
-            const res = await axios.get("/api/youtube/playlistItems", {
-              params: {
-                part: "snippet",
-                playlistId,
-                maxResults: 5,
-              },
-            });
-            return res.data.items || [];
-          })
-        );
-
-        // Combine all video items and remove duplicates
-        const allVideoItems = [
-          ...(videoSearchResponse.data?.items || []),
-          ...channelVideos.flat(),
-          ...playlistVideos.flat(),
-        ];
-
-        const validVideoItems = allVideoItems.filter(
-          (item) => item.id?.videoId
-        );
-        const uniqueVideoIds = [
-          ...new Set(validVideoItems.map((item) => item.id.videoId)),
-        ];
-
-        Sentry.addBreadcrumb({
-          category: "search",
-          message: "Fetching video details",
-          level: "info",
-        });
-
-        if (uniqueVideoIds.length === 0) {
-          return [];
-        }
-        const videoDetails = await fetchVideoDetailsInChunks(uniqueVideoIds);
-        return videoDetails;
+        return data;
       } catch (error) {
         handleApiError(error);
         return [];
       }
     },
     enabled: Boolean(query),
-    staleTime: STALE_TIME,
+    staleTime: 1000 * 60 * 60, // 1 hour
     cacheTime: CACHE_TIME,
     refetchOnWindowFocus: false,
     retry: (failureCount, error) =>

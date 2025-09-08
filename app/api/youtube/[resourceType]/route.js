@@ -16,7 +16,7 @@ export async function GET(request, { params }) {
   const apiKey3 = process.env.YOUTUBE_API_KEY3;
 
   // Vercel provides the user's country in this header. Fallback to US.
-  const country = headers().get("x-vercel-ip-country") || "US";
+  const country = await headers().get("x-vercel-ip-country") || "US";
 
   // If fetching popular videos and no region is specified, use the user's country
   if (

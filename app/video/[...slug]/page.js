@@ -142,7 +142,7 @@ function VideoError() {
 }
 
 export default async function VideoPage({ params }) {
-  // Use array destructuring for cleaner slug parsing
+  // Array destructuring is used for cleaner slug parsing
   const [videoId, channelTitle] = await params.slug || [];
 
   // A videoId is required to fetch data.
