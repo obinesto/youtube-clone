@@ -55,7 +55,9 @@ function InstallPrompt() {
     <Card className="p-6 mb-6">
       <div className="flex items-center gap-3 mb-4">
         <Smartphone className="h-5 w-5" />
-        <h3 className="text-lg font-semibold w-full justify-between">Install YouTube Clone App</h3>
+        <h3 className="text-lg font-semibold w-full justify-between">
+          Install YouTube Clone App
+        </h3>
         <Button onClick={() => setInstallVisibility(false)}>
           <X />
         </Button>
@@ -167,7 +169,7 @@ function PushNotificationManager() {
   }
 
   // Hide the component if the user has dismissed it or if user device does not support push notifications or if there is no user
-  if (!subscriptionVisibility || !isSupported || !user ) {
+  if (!subscriptionVisibility || !isSupported || !user) {
     return null;
   }
 
@@ -221,7 +223,7 @@ function PushNotificationManager() {
           <div className="w-full flex justify-between md:justify-end gap-4 items-center">
             <Button onClick={subscribeToPush} disabled={isLoading}>
               <Bell />
-              Enable Notifications
+              {isLoading ? "Enabling..." : "Enable Notifications"}
             </Button>
             <Button
               onClick={() => setSubscriptionVisibility(false)}
