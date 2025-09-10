@@ -1,17 +1,17 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useInstallPrompt } from "@/components/PromptProvider";
 import {
   subscribeUser,
   unsubscribeUser,
-  sendTestNotification as sendTestNotificationAction,
+  sendTestNotificationToUser,
 } from "./actions";
 import useUserStore from "@/hooks/useStore";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Bell, BellOff, Plus, Share, Smartphone, X } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 
 function urlBase64ToUint8Array(base64String) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -27,29 +27,14 @@ function urlBase64ToUint8Array(base64String) {
 }
 
 function InstallPrompt() {
-  const [isIOS, setIsIOS] = useState(false);
-  const [deferredPrompt, setDeferredPrompt] = useState(null);
-  const [installVisibility, setInstallVisibility] = useState(true);
+  const {
+    showInstallPrompt,
+    dismissInstallPrompt,
+    triggerInstallPrompt,
+    isIOS,
+  } = useInstallPrompt();
 
-  useEffect(() => {
-    setIsIOS(/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream);
-
-    const handler = (e) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-    };
-
-    window.addEventListener("beforeinstallprompt", handler);
-    return () => window.removeEventListener("beforeinstallprompt", handler);
-  }, []);
-
-  if (!isIOS && !deferredPrompt) {
-    return null;
-  }
-
-  if (!installVisibility) {
-    return null;
-  }
+  if (!showInstallPrompt) return null;
 
   return (
     <Card className="p-6 mb-6">
@@ -58,7 +43,7 @@ function InstallPrompt() {
         <h3 className="text-lg font-semibold w-full justify-between">
           Install YouTube Clone App
         </h3>
-        <Button onClick={() => setInstallVisibility(false)}>
+        <Button onClick={dismissInstallPrompt}>
           <X />
         </Button>
       </div>
@@ -84,7 +69,7 @@ function InstallPrompt() {
             Install our app for a better experience with offline access and
             faster loading times.
           </p>
-          <Button onClick={() => deferredPrompt?.prompt()}>
+          <Button onClick={triggerInstallPrompt}>
             <Plus className="h-4 w-4 mr-2" />
             Add to Home Screen
           </Button>
@@ -99,31 +84,27 @@ function PushNotificationManager() {
   const [subscription, setSubscription] = useState(null);
   const [subscriptionVisibility, setSubscriptionVisibility] = useState(true);
   const [message, setMessage] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [loadingStates, setLoadingStates] = useState({
+    subscribe: false,
+    unsubscribe: false,
+    test: false,
+  });
   const { user } = useUserStore();
 
   useEffect(() => {
     if ("serviceWorker" in navigator && "PushManager" in window) {
       setIsSupported(true);
-      registerServiceWorker();
+      navigator.serviceWorker.ready.then(async (registration) => {
+        const sub = await registration.pushManager.getSubscription();
+        setSubscription(sub);
+      }).catch(error => {
+        console.error("Error getting service worker ready:", error);
+      });
     }
   }, []);
 
-  async function registerServiceWorker() {
-    try {
-      const registration = await navigator.serviceWorker.register("/sw.js", {
-        scope: "/",
-        updateViaCache: "none",
-      });
-      const sub = await registration.pushManager.getSubscription();
-      setSubscription(sub);
-    } catch (error) {
-      console.error("Service worker registration failed:", error);
-    }
-  }
-
   async function subscribeToPush() {
-    setIsLoading(true);
+    setLoadingStates(prev => ({ ...prev, subscribe: true }));
     try {
       const registration = await navigator.serviceWorker.ready;
       const sub = await registration.pushManager.subscribe({
@@ -133,16 +114,23 @@ function PushNotificationManager() {
         ),
       });
       setSubscription(sub);
-      await subscribeUser(sub.toJSON(), user?.id);
+
+      if (!user?.uid) {
+        console.error("Firebase UID is missing. Subscription cannot be saved.");
+        await sub.unsubscribe();
+        setSubscription(null);
+        return;
+      }
+
+      await subscribeUser(sub.toJSON(), user?.uid);
     } catch (error) {
-      console.error("Failed to subscribe:", error);
     } finally {
-      setIsLoading(false);
+      setLoadingStates(prev => ({ ...prev, subscribe: false }));
     }
   }
 
   async function unsubscribeFromPush() {
-    setIsLoading(true);
+    setLoadingStates(prev => ({ ...prev, unsubscribe: true }));
     try {
       await subscription?.unsubscribe();
       await unsubscribeUser(subscription.toJSON());
@@ -151,20 +139,20 @@ function PushNotificationManager() {
     } catch (error) {
       console.error("Failed to unsubscribe:", error);
     } finally {
-      setIsLoading(false);
+      setLoadingStates(prev => ({ ...prev, unsubscribe: false }));
     }
   }
 
   async function sendTestNotification() {
     if (!subscription || !message.trim()) return;
-    setIsLoading(true);
+    setLoadingStates(prev => ({ ...prev, test: true }));
     try {
-      await sendTestNotificationAction(subscription.toJSON(), message);
+      await sendTestNotificationToUser(subscription.toJSON(), message);
       setMessage("");
     } catch (error) {
       console.error("Failed to send notification:", error);
     } finally {
-      setIsLoading(false);
+      setLoadingStates(prev => ({ ...prev, test: false }));
     }
   }
 
@@ -192,23 +180,23 @@ function PushNotificationManager() {
               />
               <Button
                 onClick={sendTestNotification}
-                disabled={isLoading || !message.trim()}
+                disabled={loadingStates.test || !message.trim()}
               >
-                {isLoading ? "Testing..." : "Test"}
+                {loadingStates.test ? "Testing..." : "Test"}
               </Button>
             </div>
             <div className="flex items-center gap-4">
               <Button
                 variant="destructive"
                 onClick={unsubscribeFromPush}
-                disabled={isLoading}
+                disabled={loadingStates.unsubscribe}
               >
                 <BellOff className="h-4 w-4 mr-2" />
-                Disable Notifications
+                {loadingStates.unsubscribe ? "Disabling..." : "Disable Notifications"}
               </Button>
               <Button
                 onClick={() => setSubscriptionVisibility(false)}
-                disabled={isLoading}
+                disabled={Object.values(loadingStates).some(Boolean)}
               >
                 <X />
               </Button>
@@ -220,14 +208,14 @@ function PushNotificationManager() {
           <p className="text-sm text-muted-foreground">
             Enable notifications to stay updated with acvities on here.
           </p>
-          <div className="w-full flex justify-between md:justify-end gap-4 items-center">
-            <Button onClick={subscribeToPush} disabled={isLoading}>
+          <div className="w-full md:w-1/4 flex justify-between md:justify-start gap-4 items-center">
+            <Button onClick={subscribeToPush} disabled={loadingStates.subscribe || !user?.uid}>
               <Bell />
-              {isLoading ? "Enabling..." : "Enable Notifications"}
+              {loadingStates.subscribe ? "Enabling..." : "Enable Notifications"}
             </Button>
             <Button
               onClick={() => setSubscriptionVisibility(false)}
-              disabled={isLoading}
+              disabled={Object.values(loadingStates).some(Boolean)}
             >
               <X />
             </Button>
@@ -244,7 +232,7 @@ export default function PwaSetup() {
   if (!isClient) return null;
 
   return (
-    <div className="fixed top-8 left-0 md:left-32 right-0 flex flex-col max-w-2xl mx-auto px-4 py-8">
+    <div className="fixed top-10 left-0 md:left-32 right-0 flex flex-col max-w-2xl mx-auto px-4 py-8">
       <PushNotificationManager />
       <InstallPrompt />
     </div>

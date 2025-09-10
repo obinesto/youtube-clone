@@ -53,7 +53,7 @@ const NavBar = () => {
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedQuery(query);
-    }, 500); // 500ms delay
+    }, 1000); // 1s delay
 
     return () => clearTimeout(timer); // makes the function restart on every keystroke since query is a dependency. So it will only pass a value when 500ms has elapsed without a keystroke
   }, [query]);

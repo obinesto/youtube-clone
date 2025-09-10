@@ -8,11 +8,43 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 const YOUTUBE_API_URL = 'https://www.googleapis.com/youtube/v3';
 
-/**
- * Fetches video details in chunks to stay within API limits.
- * @param {string[]} videoIds - Array of video IDs.
- * @returns {Promise<object[]>} - Array of video detail items.
- */
+// Helper function to make the API call and handle key rotation
+const apiKeys = [
+  process.env.YOUTUBE_API_KEY,
+  process.env.YOUTUBE_API_KEY2,
+  process.env.YOUTUBE_API_KEY3,
+].filter(Boolean); // Filter out any undefined/null keys
+
+async function fetchWithRetry(resourceType, params) {
+  if (apiKeys.length === 0) {
+    throw new Error('No YouTube API keys are set in environment variables.');
+  }
+
+  for (const [index, apiKey] of apiKeys.entries()) {
+    try {
+      const response = await axios.get(`${YOUTUBE_API_URL}/${resourceType}`, {
+        params: {
+          ...params,
+          key: apiKey,
+        },
+      });
+      return response;
+    } catch (error) {
+      const isQuotaError =
+        error.response?.status === 403 &&
+        error.response?.data?.error?.message?.includes('quota');
+
+      if (isQuotaError && index < apiKeys.length - 1) {
+        console.warn(`API key #${index + 1} quota exceeded, trying next key...`);
+        continue; // Try the next key
+      }
+      // For other errors or if it's the last key, re-throw the error to be caught by the main handler
+      throw error;
+    }
+  }
+  throw new Error('All available YouTube API keys failed.');
+}
+
 const fetchVideoDetailsInChunks = async videoIds => {
   const CHUNK_SIZE = 50; // YouTube API limit for IDs per request
   const allVideoDetails = [];
@@ -20,19 +52,16 @@ const fetchVideoDetailsInChunks = async videoIds => {
     const chunk = videoIds.slice(i, i + CHUNK_SIZE);
     if (chunk.length > 0) {
       try {
-        const response = await axios.get(`${YOUTUBE_API_URL}/videos`, {
-          params: {
-            part: 'snippet,statistics,contentDetails',
-            id: chunk.join(','),
-            key: process.env.YOUTUBE_API_KEY,
-          },
+        const response = await fetchWithRetry('videos', {
+          part: 'snippet,statistics,contentDetails',
+          id: chunk.join(','),
         });
         if (response.data?.items) {
           allVideoDetails.push(...response.data.items);
         }
       } catch (error) {
         console.error('Failed to fetch a chunk of video details:', error);
-        // Don't throw, continue to the next chunk
+        // Don't throw, just continue to the next chunk
       }
     }
   }
@@ -74,15 +103,12 @@ export async function GET(request) {
     console.log(`Cache miss for query: "${normalizedQuery}". Fetching from YouTube.`);
 
     // 2. If no cache, fetch from YouTube API
-    const searchResponse = await axios.get(`${YOUTUBE_API_URL}/search`, {
-      params: {
-        part: 'snippet',
-        q: normalizedQuery,
-        type: 'video',
-        maxResults: 50,
-        videoEmbeddable: 'true',
-        key: process.env.YOUTUBE_API_KEY,
-      },
+    const searchResponse = await fetchWithRetry('search', {
+      part: 'snippet',
+      q: normalizedQuery,
+      type: 'video',
+      maxResults: 50,
+      videoEmbeddable: 'true',
     });
 
     const videoIds =
