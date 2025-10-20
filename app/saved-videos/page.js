@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useSavedVideos } from "@/hooks/useQueries";
 import VideoCard from "@/components/VideoCard";
 import useUserStore from "@/hooks/useStore";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import LoadingProtected from "@/components/LoadingProtected";
 import { AlertTriangle } from "lucide-react";
 import {
