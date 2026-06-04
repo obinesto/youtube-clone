@@ -3,7 +3,7 @@
   "crons": [
     {
       "path": "/api/cron/supabase-keepalive",
-      "schedule": "50 22 * * *"
+      "schedule": "0 0 * * *"
     }
   ]
 }
