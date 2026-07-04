@@ -13,3 +13,7 @@ Sentry.init({
   // Setting this option to true will print useful information to the console while you're setting up Sentry.
   debug: false,
 });
+
+// Use metrics in both server and client code
+Sentry.metrics.count('user_action', 1);
+Sentry.metrics.distribution('api_response_time', 150);
