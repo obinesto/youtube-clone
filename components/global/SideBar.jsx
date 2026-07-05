@@ -132,13 +132,14 @@ const SideBar = () => {
         <button
           type="button"
           aria-label="Close sidebar"
-          className="fixed inset-x-0 bottom-0 top-14 z-40 bg-black/40 backdrop-blur-[1px] md:hidden"
+          className="app-sidebar-backdrop fixed inset-x-0 bottom-0 top-14 z-40 bg-black/40 backdrop-blur-[1px] md:hidden"
           onClick={closeSidebar}
         />
       )}
       <aside
+        data-open={isSidebarOpen}
         className={cn(
-          "fixed bottom-0 left-0 top-14 z-50 w-[min(18rem,85vw)] overflow-y-auto border-r border-border/70 bg-card/80 text-foreground shadow-sm shadow-black/[0.03] backdrop-blur-xl transition-transform duration-300 ease-in-out dark:bg-background dark:text-foreground md:static md:z-auto md:h-full md:min-h-0 md:w-64 md:self-stretch md:translate-x-0",
+          "app-sidebar fixed bottom-0 left-0 top-14 z-50 w-[min(18rem,85vw)] overflow-y-auto border-r border-border/70 bg-card/80 text-foreground shadow-sm shadow-black/[0.03] backdrop-blur-xl transition-transform duration-300 ease-in-out dark:bg-background dark:text-foreground md:static md:z-auto md:h-full md:min-h-0 md:w-64 md:self-stretch md:translate-x-0",
           isSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         )}
       >

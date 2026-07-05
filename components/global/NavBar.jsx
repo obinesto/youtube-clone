@@ -83,12 +83,12 @@ const NavBar = () => {
   };
 
   return (
-    <nav className="z-50 flex h-14 shrink-0 items-center justify-between border-b border-border/70 bg-card/90 px-4 text-foreground shadow-sm shadow-black/[0.03] backdrop-blur-xl dark:bg-background dark:text-foreground sm:px-6 md:h-16">
+    <nav className="app-top-nav z-50 flex h-14 shrink-0 items-center justify-between border-b border-border/70 bg-card/90 px-4 text-foreground shadow-sm shadow-black/[0.03] backdrop-blur-xl dark:bg-background dark:text-foreground sm:px-6 md:h-16">
       <div className="flex items-center gap-2 sm:gap-4">
         <Button
           variant="ghost"
           size="icon"
-          className="md:hidden"
+          className="app-sidebar-toggle md:hidden"
           onClick={toggleSidebar}
         >
           {isSidebarOpen ? (
@@ -334,7 +334,7 @@ const NavBar = () => {
       </div>
       {/* search results */}
       {query && (
-        <div className="pointer-events-none fixed left-0 right-0 top-14 z-[49] md:left-64 md:top-16">
+        <div className="app-search-results-layer pointer-events-none fixed left-0 right-0 top-14 z-[49] md:left-64 md:top-16">
           <div className="max-w-3xl mx-auto px-2 sm:px-4 pointer-events-auto">
             <Card className="search-results p-4 max-h-80 overflow-y-auto overflow-x-hidden shadow-lg">
               {isLoading ? (
